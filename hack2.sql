@@ -1,0 +1,1 @@
+INSERT INTO telephony_phone_numbers (organization_id, telephony_configuration_id, address, address_normalized, address_type, is_active, is_default_caller_id, extra_metadata, created_at, updated_at) VALUES (1, 2, '+17372508034', '+17372508034', 'number', true, true, '{}', NOW(), NOW());

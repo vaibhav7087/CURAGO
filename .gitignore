@@ -1,0 +1,81 @@
+# Secrets & Credentials
+.env
+.env.*
+!.env.example
+*.env
+docs/keys.txt
+keys.txt
+*secret*
+*credential*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.venv
+backend/venv/
+backend/env/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+frontend/dist/
+frontend/build/
+.next/
+out/
+.turbo/
+
+# Flutter / Dart
+.dart_tool/
+lastmile_agent/.dart_tool/
+lastmile_agent/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.pub
+*.epk
+
+# Logs & Diagnostics
+*.log
+logs/
+server.log
+error.log
+py_test.log
+backend/*.log
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Antigravity / Gemini Brain Artifacts & Tasks
+.system_generated/
+scratch/

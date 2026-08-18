@@ -1,0 +1,63 @@
+[
+  {
+    "patientId": "44444444-4444-4444-4444-444444444444",
+    "ticketId": "77777777-7777-7777-7777-777777777777",
+    "assignedDoctorId": "4416f3e1-d96c-4793-973f-7bf724f4afe2",
+    "createdAt": null,
+    "symptomsSummary": "High fever for 3 days.",
+    "severityScore": 1,
+    "ticketStatus": "Open",
+    "assignedTraineeId": "55555555-5555-5555-5555-555555555555",
+    "vitalsData": {
+      "hr": "",
+      "dia": "",
+      "sys": "",
+      "spo2": "",
+      "temp": ""
+    }
+  },
+  {
+    "patientId": "33333333-3333-3333-3333-333333333333",
+    "ticketId": "66666666-6666-6666-6666-666666666666",
+    "assignedDoctorId": "4416f3e1-d96c-4793-973f-7bf724f4afe2",
+    "createdAt": null,
+    "symptomsSummary": "Patient reports severe chest pain.",
+    "severityScore": 3,
+    "ticketStatus": "approved",
+    "assignedTraineeId": "55555555-5555-5555-5555-555555555555",
+    "vitalsData": null
+  },
+  {
+    "patientId": "5c7c8816-4a6f-4b65-94b0-f36056cbc35d",
+    "ticketId": "2057afd0-e74a-4a43-a886-7f35a6d30aeb",
+    "assignedDoctorId": "7695f8d4-da58-428c-83b9-75eb01b4f82c",
+    "createdAt": null,
+    "symptomsSummary": "Patient reports severe headache and fever.",
+    "severityScore": 2,
+    "ticketStatus": "Open",
+    "assignedTraineeId": "55555555-5555-5555-5555-555555555555",
+    "vitalsData": null
+  },
+  {
+    "patientId": "db840845-43ec-409f-939f-c27bb7c5f544",
+    "ticketId": "a12b6be0-6797-4957-bdca-7e7760fe56b1",
+    "assignedDoctorId": "4416f3e1-d96c-4793-973f-7bf724f4afe2",
+    "createdAt": null,
+    "symptomsSummary": "cold and  cough",
+    "severityScore": 1,
+    "ticketStatus": "approved",
+    "assignedTraineeId": "55555555-5555-5555-5555-555555555555",
+    "vitalsData": null
+  },
+  {
+    "patientId": "76037469-1cb2-4cf0-935f-c4c4ebede858",
+    "ticketId": "b4070d2c-26a0-45a2-ad45-67b7d57e8a0c",
+    "assignedDoctorId": "7695f8d4-da58-428c-83b9-75eb01b4f82c",
+    "createdAt": null,
+    "symptomsSummary": "Test summary for fever and sore throat.",
+    "severityScore": 3,
+    "ticketStatus": "Open",
+    "assignedTraineeId": null,
+    "vitalsData": null
+  }
+]

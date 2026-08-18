@@ -1,0 +1,228 @@
+:root {
+  --bg-start: #eef3ff;
+  --bg-end: #dbe7ff;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --ring: #c7d2fe;
+  --primary: #111827;
+  --card: rgba(255, 255, 255, 0.3);
+  --card-hover: rgba(255, 255, 255, 0.4);
+  --card-solid: #ffffff;
+  --border: rgba(255, 255, 255, 0.5);
+  --border-focus: rgba(199, 210, 254, 0.5);
+  --accent: #f3f4f6;
+  --error: #ef4444;
+}
+
+.dark-theme {
+  --bg-start: #0f172a;
+  --bg-end: #1e293b;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --ring: #3b82f6;
+  --primary: #3b82f6; 
+  --card: rgba(15, 23, 42, 0.4);
+  --card-hover: rgba(15, 23, 42, 0.6);
+  --card-solid: #1e293b;
+  --border: rgba(255, 255, 255, 0.15);
+  --border-focus: rgba(59, 130, 246, 0.5);
+  --accent: #1e293b;
+  --error: #f87171;
+}
+
+.landing-bg {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  width: 100vw;
+  display: grid;
+  place-items: center;
+  padding: 0 16px;
+  overflow: auto;
+  background:
+    radial-gradient(1200px circle at 50% -200px, var(--bg-end) 0, var(--bg-start) 70%),
+    linear-gradient(180deg, var(--bg-start), var(--bg-end));
+}
+
+.card {
+  width: clamp(420px, 48vw, 760px);
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1), inset 0 0 0 1px var(--card);
+  padding: 28px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.pill {
+  display: inline-block;
+  background: #e8efff;
+  color: #3b82f6;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  letter-spacing: .04em;
+}
+
+.title {
+  margin: 14px 0 6px;
+  font-size: 28px;
+  color: var(--text);
+  line-height: 1.2;
+  font-weight: 800;
+  text-align: left;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.role-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.role-btn {
+  background: var(--card-hover);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  height: 36px;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.role-btn:hover {
+  background: var(--card);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.role-btn.active {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px var(--border-focus);
+  background: var(--card-solid);
+}
+
+.role-indicator {
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.form {
+  display: grid;
+  gap: 8px;
+}
+.form label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.form input {
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  background: var(--card);
+  backdrop-filter: blur(4px);
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+.form input:hover {
+  background: var(--card-hover);
+}
+.form input:focus {
+  outline: none;
+  background: var(--card-solid);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.form input::placeholder {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--error);
+  font-size: 13px;
+}
+
+.login-btn {
+  height: 40px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  margin-top: 4px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  opacity: 0.9;
+}
+
+.hint {
+  margin-top: 14px;
+  background: var(--card);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+.hint:hover {
+  background: var(--card-hover);
+  transform: translateY(-2px);
+}
+.hint-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+.label {
+  color: #0ea5e9;
+  font-weight: 700;
+}
+
+.cred-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cred-btn {
+  background: var(--card);
+  backdrop-filter: blur(4px);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.cred-btn:hover {
+  background: var(--card-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}

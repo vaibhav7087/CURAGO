@@ -1,0 +1,1 @@
+INSERT INTO telephony_configurations (organization_id, name, provider, credentials, is_default_outbound, inactive, created_at, updated_at) VALUES (1, 'Twilio Trial Bypass', 'twilio', '{"account_sid": "YOUR_TWILIO_ACCOUNT_SID", "auth_token": "YOUR_TWILIO_AUTH_TOKEN"}', true, false, NOW(), NOW()) RETURNING id;
