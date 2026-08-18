@@ -53,7 +53,7 @@ async def submit_vitals(ticket_id: str, vitals: VitalsInput):
     
     try:
         response = groq_client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama3-70b-8192",
             messages=[{"role": "user", "content": prompt}],
             timeout=15
         )
