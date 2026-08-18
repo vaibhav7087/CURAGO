@@ -17,7 +17,8 @@ flowchart LR
     A[📞 1. Voice Intake\nPatient Calls In] --> B[🧠 2. AI Triage\nGroq / NIM Extraction]
     B --> C[👨‍⚕️ 3. Doctor Dashboard\nReview & Approve]
     C --> D[🚴 4. Last-Mile Logistics\nField Agent Delivery]
-    D --> E[📱 5. Auto Follow-up\nRecovery or Camp Escalation]
+    D --> E[📱 5. Auto Follow-up\nSMS Check-in or AI Voice Call]
+    E --> F[🩺 6. Physical Vitals Check\nTrainee Escalates to Doctor]
 ```
 
 ### 1. 🎙️ Multilingual Voice AI Intake
@@ -41,8 +42,9 @@ flowchart LR
 - Built-in payment collection (Cash, Pre-paid, Digital QR).
 
 ### 4. 🔄 Resolution & Automated Safety Net
-- Automated follow-up SMS triggers to verify patient recovery.
-- If symptoms persist, auto-escalates to physical trainee home visits or weekly specialist camps.
+- **SMS Follow-ups**: Automated SMS triggers verify recovery. If the patient replies "NO", a trainee is auto-assigned for an in-person vitals check.
+- **Context-Aware AI Calls**: Patients calling the helpline for follow-ups are identified. Vapi queries the `get_patient_history` tool so the AI dynamically remembers their past symptoms.
+- **Vitals Escalation**: When a trainee inputs patient vitals via the Field App, Groq AI diagnoses the severity. If critical, the ticket is instantly escalated back to **doctor_review** on the Doctor Dashboard.
 
 ---
 
@@ -56,10 +58,11 @@ flowchart TD
     end
 
     subgraph Backend ["⚡ Backend & AI Intelligence"]
-        Vapi -->|End-of-Call Webhook| Fast["FastAPI Backend (:8002)"]
-        Fast <--> Groq["Groq LLaMA 3.3 70B (Extraction)"]
+        Vapi -->|Tool: get_patient_history| Fast["FastAPI Backend (:8002)"]
+        Vapi -->|End-of-Call Webhook| Fast
+        Fast <--> Groq["Groq LLaMA 3.3 70B (Extraction & Vitals Diag)"]
         Fast <--> RAG["Gemini Embeddings (Medical Guidelines RAG)"]
-        Fast <--> SMS["Twilio SMS Service"]
+        Twilio <-->|SMS Webhooks| Fast
     end
 
     subgraph Data ["🗄️ Database & Realtime"]
@@ -68,9 +71,9 @@ flowchart TD
 
     subgraph Frontends ["💻 Applications & Dashboards"]
         DB <-->|Realtime Sync| DoctorDash["Doctor & Trainee Dashboard (React/Vite)"]
-        DB <--> FlutterApp["LastMile Delivery Agent App (Flutter)"]
+        DB <--> FlutterApp["Curago Field App (Flutter)"]
         DoctorDash -->|Approve & Trigger Order| Fast
-        Fast -->|Delivery Confirmation SMS| P
+        FlutterApp -->|Submit Vitals| Fast
     end
 ```
 
@@ -96,7 +99,7 @@ curago/
 │   ├── package.json
 │   └── vite.config.js
 │
-├── lastmile_agent/           # Flutter Mobile Application
+├── curago_field_app/         # Flutter Mobile Application
 │   ├── lib/                  # Delivery management & payment screens
 │   └── pubspec.yaml
 │
@@ -158,10 +161,10 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
 ---
 
-### 3. LastMile Delivery Mobile App (Flutter)
+### 3. Curago Field Mobile App (Flutter)
 
 ```powershell
-cd lastmile_agent
+cd curago_field_app
 
 # Get dependencies
 flutter pub get
