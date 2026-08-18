@@ -1,9 +1,25 @@
+import threading
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from app.routers import doctor, trainee, webhook, orders, vitals, analytics, sms_webhook
 from fastapi.middleware.cors import CORSMiddleware
+import sys
+import os
 
-app = FastAPI(title="Telemedicine Phygital API V2")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from followup_scheduler import run_scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start the follow-up monitoring scheduler in a background thread
+    print("Starting background followup scheduler...")
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+    yield
+    print("Shutting down...")
+
+app = FastAPI(title="Telemedicine Phygital API V2", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
