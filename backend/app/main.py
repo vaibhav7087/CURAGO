@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from app.routers import doctor, trainee, webhook, orders, vitals, analytics, sms_webhook
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,3 +29,21 @@ def root():
 @app.get("/ping")
 def health_check():
     return {"status": "ok", "service": "curago-backend"}
+
+import os
+
+import glob
+
+@app.get("/download/apk")
+def download_apk():
+    # Provide the path to the APK
+    static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+    apk_files = glob.glob(os.path.join(static_dir, "*.apk"))
+    
+    if apk_files:
+        # Sort by modification time to get the latest
+        latest_apk = max(apk_files, key=os.path.getmtime)
+        filename = os.path.basename(latest_apk)
+        return FileResponse(path=latest_apk, filename=filename, media_type="application/vnd.android.package-archive")
+    else:
+        return {"error": "APK not yet available on server."}
