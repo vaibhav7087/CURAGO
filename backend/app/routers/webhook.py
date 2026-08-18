@@ -165,19 +165,23 @@ async def end_call_webhook(request: Request):
         gender = gathered_data.get("gender")
         village = gathered_data.get("village")
 
-        # Fallback to LLM extraction if Dograh didn't gather structured data
-        if not patient_name or not severity or not symptoms:
-            print("Structured data missing. Using LLM for extraction...")
-            extracted = extract_patient_data(transcript)
-            patient_name = extracted.get("patient_name", patient_name) or "Unknown Patient"
-            severity = extracted.get("severity", severity) or "Medium"
-            symptoms = extracted.get("symptoms", symptoms) or "Unspecified symptoms"
-            age = extracted.get("age", age)
-            gender = extracted.get("gender", gender)
-            village = extracted.get("village", village)
-            
-            suggested_meds = extracted.get("suggested_medicines")
-            if suggested_meds and isinstance(suggested_meds, list):
+        # We ALWAYS run our backend LLM extraction now because:
+        # 1. It translates regional languages to English.
+        # 2. It suggests medicines based on our custom inventory.
+        # 3. It extracts missing fields like 'village' that Vapi might miss.
+        print("Running backend LLM extraction for translation, location, and medicine suggestions...")
+        extracted = extract_patient_data(transcript)
+        
+        # Merge Vapi's data with our LLM's data (LLM takes precedence if Vapi missed it)
+        patient_name = extracted.get("patient_name") or patient_name or "Unknown Patient"
+        severity = extracted.get("severity") or severity or "Medium"
+        symptoms = extracted.get("symptoms") or symptoms or "Unspecified symptoms"
+        age = extracted.get("age") or age
+        gender = extracted.get("gender") or gender
+        village = extracted.get("village") or village
+        
+        suggested_meds = extracted.get("suggested_medicines")
+        if suggested_meds and isinstance(suggested_meds, list):
                 meds_str = ", ".join(suggested_meds)
                 symptoms = f"{symptoms}\n\nAI Recommended Medicines: {meds_str}"
 
