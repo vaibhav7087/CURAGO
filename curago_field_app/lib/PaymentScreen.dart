@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'UpiQrScreen.dart';
 import 'PaymentSuccessScreen.dart';
+import 'package:curago_field_app/config.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Map<String, dynamic> order;
@@ -20,7 +21,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => isProcessing = true);
     try {
       final response = await http.patch(
-        Uri.parse('http://127.0.0.1:8001/api/orders/${widget.order['id']}/status'),
+        Uri.parse('${AppConfig.baseUrl}/api/orders/${widget.order['id']}/status'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'status': 'Delivered'}),
       );

@@ -70,6 +70,25 @@ export default function DoctorDashboard() {
   ])
   const [selectedId, setSelectedId] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
+  const [outbreaks, setOutbreaks] = useState([])
+
+  useEffect(() => {
+    const fetchOutbreaks = async () => {
+      try {
+        const response = await fetch('http://localhost:8002/api/analytics/outbreaks');
+        const data = await response.json();
+        if (data.outbreaks) {
+          setOutbreaks(data.outbreaks);
+        }
+      } catch (err) {
+        console.error("Failed to fetch outbreak analytics:", err);
+      }
+    };
+    fetchOutbreaks();
+    // Poll every minute
+    const interval = setInterval(fetchOutbreaks, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -425,6 +444,14 @@ export default function DoctorDashboard() {
         <>
         {/* PATIENT LIST */}
         <div className="doc-list">
+          {outbreaks.length > 0 && (
+            <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '12px', marginBottom: '16px', borderRadius: '8px', fontWeight: 'bold', display: 'flex', gap: '8px', alignItems: 'center', border: '1px solid #fca5a5' }}>
+              <span>⚠️</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {outbreaks.map((ob, i) => <span key={i}>{ob.message}</span>)}
+              </div>
+            </div>
+          )}
           <div className="list-header">
             <h2 className="list-title">General Patients</h2>
             <div className="list-subtitle">{patients.length} pending AI tickets</div>
@@ -485,10 +512,33 @@ export default function DoctorDashboard() {
                 </div>
               </div>
 
+              {/* Physical Vitals (if Trainee submitted them) */}
+              {patient.rawTicket?.vitals_data && Object.keys(patient.rawTicket.vitals_data).length > 0 && (
+                <div className="panel-card" style={{ borderColor: '#3b82f6', borderWidth: '2px' }}>
+                  <div className="panel-title" style={{ color: '#2563eb' }}>🩺 Physical Vitals (Recorded by Trainee)</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '12px' }}>
+                    {Object.entries(patient.rawTicket.vitals_data).map(([key, val]) => (
+                       <div key={key} style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '8px' }}>
+                          <div style={{ fontSize: '11px', color: '#60a5fa', textTransform: 'uppercase', fontWeight: 600 }}>{key}</div>
+                          <div style={{ fontSize: '15px', color: '#1e3a8a', fontWeight: 500 }}>{val}</div>
+                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* AI Summary Card */}
               <div className="panel-card">
                 <div className="panel-title">AI-Generated Medical Summary</div>
                 <div className="ai-summary">{patient.aiSummary}</div>
+                
+                {patient.rawTicket?.extracted_symptoms?.advanced_diagnosis && (
+                  <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
+                    <div style={{ fontSize: '12px', color: '#7c3aed', fontWeight: 600, marginBottom: '4px' }}>✨ ADVANCED AI DIAGNOSIS</div>
+                    <div style={{ color: '#334155', fontSize: '14px', lineHeight: '1.5' }}>{patient.rawTicket.extracted_symptoms.advanced_diagnosis}</div>
+                  </div>
+                )}
+                
                 <div className="symptoms-title">Reported Symptoms:</div>
                 <div className="symptoms-row">
                   {patient.symptoms.map((s, i) => (

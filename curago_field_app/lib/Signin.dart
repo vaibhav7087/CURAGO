@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'dart:io';
 
-import 'package:llastmileagent/recentshippingscreen.dart';
+import 'package:curago_field_app/recentshippingscreen.dart';
 
 
 class SignInScreen extends StatefulWidget {

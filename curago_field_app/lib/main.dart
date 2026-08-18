@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:llastmileagent/Signin.dart';
+import 'package:curago_field_app/RoleSelectionScreen.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,7 +9,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:'fultter demo ',
+      title: 'Curago Field App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -18,10 +18,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-
-
 
 class MedicineOnboardingScreen extends StatefulWidget {
   @override
@@ -36,10 +32,7 @@ class _MedicineOnboardingScreenState extends State<MedicineOnboardingScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/ambulance.png'), // Ambulance/delivery at sunset
-            fit: BoxFit.cover,
-          ),
+          color: Colors.grey[900],
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -47,8 +40,8 @@ class _MedicineOnboardingScreenState extends State<MedicineOnboardingScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.7),
-                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.8),
+                Colors.black.withOpacity(0.5),
               ],
             ),
           ),
@@ -58,42 +51,38 @@ class _MedicineOnboardingScreenState extends State<MedicineOnboardingScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Dots section completely removed
                   Spacer(),
-                  // Title and Subtitle (Ambulance-themed)
                   Column(
                     children: [
                       Text(
-                        'Smart Medicine\nDelivery Made Simple',
+                        'Curago Field Operations',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 36,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          height: 1.1,
-                          shadows: [Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 4)],
+                          height: 1.2,
                         ),
                       ),
-                      SizedBox(height: 24),
+                      SizedBox(height: 16),
                       Text(
-                        'Stay updated every step of the way with\nlive tracking.',
+                        'Trainee Vitals Recording & Delivery Tracking',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 18,
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 16,
                           height: 1.4,
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: 60),
-                  // Get Started Button
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                          context,
+                      Navigator.pushReplacement(
+                        context,
                         MaterialPageRoute(
-                          builder: (_) => SignInScreen(),
+                          builder: (_) => RoleSelectionScreen(),
                         ),
                       );
                     },
@@ -103,14 +92,14 @@ class _MedicineOnboardingScreenState extends State<MedicineOnboardingScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(colors: [Colors.green[600]!, Colors.green[700]!]),
                         borderRadius: BorderRadius.circular(30),
-                        boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.5), blurRadius: 20, offset: Offset(0, 10))],
+                        boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 15, offset: Offset(0, 8))],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.arrow_forward, color: Colors.white),
                           SizedBox(width: 12),
-                          Text('Get Started', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text('Get Started', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
