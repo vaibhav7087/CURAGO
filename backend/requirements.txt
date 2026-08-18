@@ -5,6 +5,6 @@ supabase
 python-dotenv
 pydantic
 httpx
-google-generativeai
+google-genai
 openai
 twilio
