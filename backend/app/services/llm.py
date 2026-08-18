@@ -72,7 +72,7 @@ def extract_patient_data(transcript: str) -> dict:
         if groq_client:
             print("Attempting extraction with Groq...")
             # Use a currently available model on Groq
-            response = groq_client.chat.completions.create(model="openai/gpt-oss-20b", messages=prompt, timeout=10)
+            response = groq_client.chat.completions.create(model="llama-3.1-70b-versatile", messages=prompt, timeout=10)
             response_content = response.choices[0].message.content
         elif nim_client:
             print("Groq client not available, using NIM...")
