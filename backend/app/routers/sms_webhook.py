@@ -62,8 +62,8 @@ async def twilio_sms_webhook(request: Request):
                 
             patient_id = patient_res.data[0]["id"]
             
-            # 2. Fetch their open ticket
-            ticket_res = supabase.table("tickets").select("id").eq("patient_id", patient_id).in_("status", ["open", "follow_up"]).order("created_at", desc=True).limit(1).execute()
+            # 2. Fetch their open/approved ticket
+            ticket_res = supabase.table("tickets").select("id").eq("patient_id", patient_id).in_("status", ["open", "follow_up", "approved"]).order("created_at", desc=True).limit(1).execute()
             
             if not ticket_res.data:
                 print("No open ticket found for patient.")
