@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:llastmileagent/main.dart'; // Your app
+import 'package:curago_field_app/main.dart';
 
 void main() {
   testWidgets('Medicine Onboarding screen displays correctly', (WidgetTester tester) async {

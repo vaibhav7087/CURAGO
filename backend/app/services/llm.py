@@ -71,7 +71,7 @@ def extract_patient_data(transcript: str) -> dict:
     try:
         if groq_client:
             print("Attempting extraction with Groq (NIM disabled due to latency)...")
-            response = groq_client.chat.completions.create(model="llama-3.3-70b-versatile", messages=prompt, timeout=10)
+            response = groq_client.chat.completions.create(model="llama3-70b-8192", messages=prompt, timeout=10)
             response_content = response.choices[0].message.content
         else:
             raise Exception("No Groq client available")

@@ -37,6 +37,67 @@ async def rag_search(request: Request):
             f.write(f"RAG Search Endpoint Error: {e}\n{traceback.format_exc()}\n")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/vapi-tool")
+async def vapi_tool_handler(request: Request):
+    """General endpoint for Vapi tool calls."""
+    try:
+        body = await request.json()
+        
+        if "message" in body and body["message"].get("type") == "tool-calls":
+            tool_calls = body["message"].get("toolWithToolCallList", [])
+            responses = []
+            
+            for tool_call_wrapper in tool_calls:
+                tool_call = tool_call_wrapper.get("toolCall", {})
+                function_name = tool_call.get("function", {}).get("name")
+                arguments = tool_call.get("function", {}).get("arguments", {})
+                call_id = tool_call.get("id")
+                
+                if function_name == "get_patient_history":
+                    # Get caller's phone number from the top level call object if not explicitly passed
+                    phone_number = body["message"].get("call", {}).get("customer", {}).get("number")
+                    if not phone_number:
+                        phone_number = arguments.get("phone_number")
+                        
+                    print(f"Fetching history for phone number: {phone_number}")
+                    
+                    if not phone_number:
+                        responses.append({"toolCallId": call_id, "result": "No phone number provided."})
+                        continue
+                        
+                    # 1. Fetch patient
+                    patient_res = supabase.table("patients").select("id, name").eq("phone_number", phone_number).execute()
+                    if not patient_res.data:
+                        responses.append({"toolCallId": call_id, "result": "No patient history found for this phone number."})
+                        continue
+                        
+                    patient_id = patient_res.data[0]["id"]
+                    patient_name = patient_res.data[0].get("name", "Unknown")
+                    
+                    # 2. Fetch latest ticket
+                    ticket_res = supabase.table("tickets").select("symptoms_summary, status").eq("patient_id", patient_id).order("created_at", desc=True).limit(1).execute()
+                    
+                    if not ticket_res.data:
+                        responses.append({"toolCallId": call_id, "result": f"Patient {patient_name} found, but no past medical tickets exist."})
+                        continue
+                        
+                    latest_ticket = ticket_res.data[0]
+                    summary = latest_ticket.get("symptoms_summary", "No symptoms recorded")
+                    
+                    result_text = f"Patient Name: {patient_name}. Previous Symptoms: {summary}."
+                    responses.append({
+                        "toolCallId": call_id,
+                        "result": result_text
+                    })
+            
+            return {"results": responses}
+            
+        return {"status": "ignored"}
+    except Exception as e:
+        with open("error.log", "a") as f:
+            f.write(f"Vapi Tool Error: {e}\n{traceback.format_exc()}\n")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/webhook/end-call")
 async def end_call_webhook(request: Request):
     """Called at the end of the call to create a ticket (Supports Dograh and Vapi)."""

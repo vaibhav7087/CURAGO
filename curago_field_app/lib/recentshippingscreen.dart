@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'OrderDetailScreen.dart';
+import 'package:curago_field_app/config.dart';
 
 class RecentShippingScreen extends StatefulWidget {
   final String userName;
@@ -28,7 +29,7 @@ class _RecentShippingScreenState extends State<RecentShippingScreen> {
     setState(() => isLoading = true);
     try {
       final shift = currentTabIndex == 0 ? 'Morning' : 'Evening';
-      final response = await http.get(Uri.parse('http://127.0.0.1:8001/api/orders/?shift=$shift'));
+      final response = await http.get(Uri.parse('${AppConfig.baseUrl}/api/orders/?shift=$shift'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
