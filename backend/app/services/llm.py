@@ -70,14 +70,27 @@ def extract_patient_data(transcript: str) -> dict:
     response_content = ""
     try:
         if groq_client:
-            print("Attempting extraction with Groq (NIM disabled due to latency)...")
-            response = groq_client.chat.completions.create(model="llama3-70b-8192", messages=prompt, timeout=10)
+            print("Attempting extraction with Groq...")
+            # Use a currently available model on Groq
+            response = groq_client.chat.completions.create(model="openai/gpt-oss-20b", messages=prompt, timeout=10)
+            response_content = response.choices[0].message.content
+        elif nim_client:
+            print("Groq client not available, using NIM...")
+            response = nim_client.chat.completions.create(model="meta/llama3-70b-instruct", messages=prompt, timeout=10)
             response_content = response.choices[0].message.content
         else:
-            raise Exception("No Groq client available")
+            raise Exception("No LLM client available")
     except Exception as e:
-        print(f"Groq failed ({e}). Cannot extract data.")
-        return {}
+        print(f"Groq failed ({e}). Falling back to NIM...")
+        try:
+            if nim_client:
+                response = nim_client.chat.completions.create(model="meta/llama3-70b-instruct", messages=prompt, timeout=15)
+                response_content = response.choices[0].message.content
+            else:
+                raise Exception("NIM client not configured")
+        except Exception as fallback_e:
+            print(f"Fallback failed: {fallback_e}")
+            return {}
 
     # Clean the response to ensure it's valid JSON
     cleaned_content = response_content.replace('```json', '').replace('```', '').strip()

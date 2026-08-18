@@ -23,3 +23,8 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"]
 @app.get("/")
 def root():
     return {"message": "Telemedicine API is running!"}
+
+@app.get("/health")
+@app.get("/ping")
+def health_check():
+    return {"status": "ok", "service": "curago-backend"}
