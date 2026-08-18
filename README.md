@@ -187,6 +187,28 @@ python total_monitor.py
 
 ---
 
+## ☁️ Cloud Deployment (Render Free Tier)
+
+Curago Backend is configured for easy 1-click deployment on Render.
+
+1. Create a free account on [Render.com](https://render.com).
+2. Click **New** -> **Blueprint**.
+3. Connect your GitHub repository. Render will automatically detect the `render.yaml` file.
+4. Click **Apply**.
+5. Go to your new Web Service dashboard -> **Environment** and add the following keys from your `.env`:
+   - `SUPABASE_URL`
+   - `SUPABASE_KEY`
+   - `GEMINI_API_KEY`
+   - `NVIDIA_NIM_API_KEY`
+   - `GROQ_API_KEY`
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_PHONE_NUMBER`
+
+> **Note on Cold Starts**: Render's free tier spins down after 15 minutes of inactivity. To ensure Vapi calls don't timeout during a cold start, set up a free pinging service (like [cron-job.org](https://cron-job.org)) to hit your `https://<YOUR-RENDER-URL>.onrender.com/` endpoint every 10 minutes.
+
+---
+
 ## 🔒 Security & Privacy
 
 - **Data Isolation**: Patient identifiable information (PII) is encrypted and access-controlled through Supabase Row-Level Security (RLS).
