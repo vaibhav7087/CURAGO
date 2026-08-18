@@ -42,11 +42,11 @@ async def submit_vitals(ticket_id: str, vitals: VitalsInput):
     Vitals recorded physically by trainee: {json.dumps(merged_vitals)}
     
     Analyze this combined data. 
-    If you need the trainee to perform specific additional physical checks (e.g., 'Check eyes for yellowness', 'Palpate stomach', 'Check blood sugar'), return a JSON object with:
+    If this is the FIRST time you are seeing this data (no 'extra_notes' provided), and you need the trainee to perform specific additional physical checks (e.g., 'Check eyes for yellowness', 'Palpate stomach'), return a JSON object with:
     {{"status": "needs_more_checks", "requested_checks": ["Check X", "Check Y"]}}
     
-    If the data is sufficient to make a confident differential diagnosis, return a JSON object with:
-    {{"status": "complete", "advanced_diagnosis": "Your detailed differential diagnosis..."}}
+    CRITICAL RULE: If the trainee HAS provided 'extra_notes' in the vitals data, it means they just completed your requested checks. You MUST NOT ask for more checks. You MUST return a JSON object with:
+    {{"status": "complete", "advanced_diagnosis": "Your detailed differential diagnosis based on ALL data including the extra notes..."}}
     
     Return ONLY valid JSON. No markdown formatting.
     """

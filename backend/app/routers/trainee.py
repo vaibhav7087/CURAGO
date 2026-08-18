@@ -17,8 +17,8 @@ def get_all_tasks():
     
     tasks = []
     for t in res.data:
-        # Either a doctor explicitly assigned a trainee, or the system flagged it for vitals check (needs_vitals)
-        if t.get("assigned_trainee_id") is not None or t.get("status") == "needs_vitals":
+        # Only show tickets that actually need vitals collected
+        if t.get("status") == "needs_vitals":
             tasks.append(t)
             
     return tasks
