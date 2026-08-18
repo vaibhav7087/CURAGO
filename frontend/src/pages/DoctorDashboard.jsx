@@ -75,7 +75,7 @@ export default function DoctorDashboard() {
   useEffect(() => {
     const fetchOutbreaks = async () => {
       try {
-        const response = await fetch('http://localhost:8002/api/analytics/outbreaks');
+        const response = await fetch('https://curago-backend.onrender.com/api/analytics/outbreaks');
         const data = await response.json();
         if (data.outbreaks) {
           setOutbreaks(data.outbreaks);
