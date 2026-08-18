@@ -409,8 +409,13 @@ export default function DoctorDashboard() {
           </div>
 
           <div className="nav-section">
-            <div className="nav-label">COMING SOON</div>
-            <div className="nav-item disabled">📊 Analytics</div>
+            <div className="nav-label">EPIDEMIC TRACKING</div>
+            <div 
+              className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('analytics')}
+            >
+              <span>📊 Analytics</span>
+            </div>
           </div>
 
           <div className="sidebar-bottom">
@@ -916,6 +921,38 @@ export default function DoctorDashboard() {
           ) : null}
         </main>
         </>
+        ) : activeTab === 'analytics' ? (
+          /* ANALYTICS VIEW */
+          <main className="doc-details" style={{ alignItems: 'flex-start' }}>
+            <div className="settings-container" style={{ width: '100%', maxWidth: '1000px' }}>
+               <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text)' }}>Epidemic Analytics & Outbreaks</h2>
+               
+               {outbreaks.length === 0 ? (
+                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)', background: 'var(--surface-light)', borderRadius: '12px' }}>
+                    No significant outbreaks detected in the last 4 days.
+                 </div>
+               ) : (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                   {outbreaks.map((outbreak, idx) => (
+                     <div key={idx} style={{ background: 'var(--surface-light)', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #ef4444' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>{outbreak.symptom.charAt(0).toUpperCase() + outbreak.symptom.slice(1)} Outbreak</h3>
+                          <span style={{ background: '#fef2f2', color: '#ef4444', padding: '4px 12px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
+                            {outbreak.count} Cases
+                          </span>
+                        </div>
+                        <p style={{ margin: '0 0 8px 0', color: 'var(--muted)' }}>Detected across <strong>{outbreak.villages.length}</strong> villages:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {outbreak.villages.map((v, i) => (
+                            <span key={i} style={{ background: 'var(--border)', padding: '4px 10px', borderRadius: '6px', fontSize: '13px' }}>{v}</span>
+                          ))}
+                        </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+            </div>
+          </main>
         ) : (
           /* SETTINGS VIEW */
           <main className="doc-details" style={{ alignItems: 'center' }}>
