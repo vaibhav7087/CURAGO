@@ -26,6 +26,7 @@ flowchart LR
 - Powered by **Vapi / Twilio / Sarvam AI / Groq LLaMA 3.3 70B**.
 - Speaks and understands regional languages (Marathi, Hindi, English).
 - Cross-examines patients sequentially (symptoms, duration, age, village) and detects emergency severity.
+- **See the exact AI instructions here: [Vapi System Prompt](vapi_system_prompt.md)**
 
 ### 2. 📋 Realtime Doctor & Trainee Dashboard
 - **Instant Triage Queue**: Incoming patient tickets populate in real-time via **Supabase Realtime**.
