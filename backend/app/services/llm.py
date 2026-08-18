@@ -74,7 +74,7 @@ def extract_patient_data(transcript: str) -> dict:
             # Use Gemini to ensure rock-solid reliability
             prompt_str = prompt[0]["content"] + "\n\nTranscript:\n" + prompt[1]["content"]
             response = gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 contents=prompt_str
             )
             response_content = response.text
