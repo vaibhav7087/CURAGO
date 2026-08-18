@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import supabase
-from app.services.llm import groq_client, nim_client
+from app.services.llm import gemini_client
 import json
 
 router = APIRouter()
@@ -33,7 +33,7 @@ async def submit_vitals(ticket_id: str, vitals: VitalsInput):
     supabase.table("tickets").update({"vitals_data": merged_vitals}).eq("id", ticket_id).execute()
     
     # 4. LLM Interactive Diagnostic check
-    if not groq_client and not nim_client:
+    if not gemini_client:
         return {"status": "success", "vitals_saved": True, "message": "Vitals saved. AI unavailable."}
         
     prompt = f"""
@@ -53,36 +53,15 @@ async def submit_vitals(ticket_id: str, vitals: VitalsInput):
     
     content = ""
     try:
-        if groq_client:
-            response = groq_client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                timeout=15
-            )
-            content = response.choices[0].message.content
-        elif nim_client:
-            response = nim_client.chat.completions.create(
-                model="meta/llama3-70b-instruct",
-                messages=[{"role": "user", "content": prompt}],
-                timeout=15
-            )
-            content = response.choices[0].message.content
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        content = response.text
             
     except Exception as e:
-        print(f"Error with primary LLM: {e}. Falling back to NIM...")
-        try:
-            if nim_client:
-                response = nim_client.chat.completions.create(
-                    model="meta/llama3-70b-instruct",
-                    messages=[{"role": "user", "content": prompt}],
-                    timeout=15
-                )
-                content = response.choices[0].message.content
-            else:
-                return {"status": "error", "vitals_saved": True, "message": "Failed to generate AI analysis."}
-        except Exception as fallback_e:
-            print(f"Error in fallback NIM: {fallback_e}")
-            return {"status": "error", "vitals_saved": True, "message": "Failed to generate AI analysis."}
+        print(f"Error with Gemini LLM: {e}")
+        return {"status": "error", "vitals_saved": True, "message": "Failed to generate AI analysis."}
 
     if not content:
         return {"status": "error", "vitals_saved": True, "message": "No response from AI."}

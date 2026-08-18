@@ -69,28 +69,20 @@ def extract_patient_data(transcript: str) -> dict:
     
     response_content = ""
     try:
-        if groq_client:
-            print("Attempting extraction with Groq...")
-            # Use a currently available model on Groq
-            response = groq_client.chat.completions.create(model="llama-3.1-70b-versatile", messages=prompt, timeout=10)
-            response_content = response.choices[0].message.content
-        elif nim_client:
-            print("Groq client not available, using NIM...")
-            response = nim_client.chat.completions.create(model="meta/llama3-70b-instruct", messages=prompt, timeout=10)
-            response_content = response.choices[0].message.content
+        if gemini_client:
+            print("Attempting extraction with Gemini...")
+            # Use Gemini to ensure rock-solid reliability
+            prompt_str = prompt[0]["content"] + "\n\nTranscript:\n" + prompt[1]["content"]
+            response = gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt_str
+            )
+            response_content = response.text
         else:
             raise Exception("No LLM client available")
     except Exception as e:
-        print(f"Groq failed ({e}). Falling back to NIM...")
-        try:
-            if nim_client:
-                response = nim_client.chat.completions.create(model="meta/llama3-70b-instruct", messages=prompt, timeout=15)
-                response_content = response.choices[0].message.content
-            else:
-                raise Exception("NIM client not configured")
-        except Exception as fallback_e:
-            print(f"Fallback failed: {fallback_e}")
-            return {}
+        print(f"Extraction failed: {e}")
+        return {}
 
     # Clean the response to ensure it's valid JSON
     cleaned_content = response_content.replace('```json', '').replace('```', '').strip()
