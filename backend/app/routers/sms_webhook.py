@@ -50,8 +50,8 @@ async def twilio_sms_webhook(request: Request):
             
         print(f"Received SMS from {from_number}: {body}")
         
-        # If they reply with "no" or "not", we auto-assign a trainee
-        if "no" in body or "not" in body:
+        # If they reply with "no", "not", or "sick", we auto-assign a trainee
+        if "no" in body or "not" in body or "sick" in body:
             print("Patient is not feeling better. Assigning trainee...")
             
             # 1. Fetch patient
