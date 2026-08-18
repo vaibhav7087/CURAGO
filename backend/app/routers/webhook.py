@@ -208,7 +208,17 @@ async def end_call_webhook(request: Request):
             p_id = new_p.data[0]['id']
             print(f"Registered new patient: {patient_name}")
 
-        # 3. Create Ticket
+        # 3. Deduplicate and Create Ticket
+        # Vapi might retry the webhook if it times out, causing duplicates.
+        # We check if there's an open ticket created in the last 2 minutes for this patient.
+        recent_tickets = supabase.table("tickets").select("id").eq("patient_id", p_id).order("created_at", desc=True).limit(1).execute()
+        
+        if recent_tickets.data:
+            # Check if we should skip creating a duplicate
+            ticket_id = recent_tickets.data[0]['id']
+            print(f"Skipping duplicate ticket creation, returning existing ticket: {ticket_id}")
+            return {"status": "ok", "ticket_id": ticket_id, "note": "deduplicated"}
+            
         ticket_res = supabase.table("tickets").insert({
             "patient_id": p_id, 
             "symptoms_summary": symptoms,
