@@ -63,7 +63,7 @@ async def search_medical_knowledge(user_query: str) -> list:
 def extract_patient_data(transcript: str) -> dict:
     """Uses NIM (or Groq fallback) to extract patient info from transcript."""
     prompt = [
-        {"role": "system", "content": "You are a medical data extractor. Extract the patient's name, severity (High, Medium, Low), symptoms, age, gender, and village from the transcript. Also, based on the symptoms, suggest a list of medicines from this available inventory: [Paracetamol 500mg, Amoxicillin 250mg, Ibuprofen 400mg, Ceftriaxone Inj 1g, ORS Packets]. Return ONLY a valid JSON object with keys: patient_name, severity, symptoms, age, gender, village, suggested_medicines (array of strings). If a value is unknown, use null. Do not include markdown formatting."},
+        {"role": "system", "content": "You are a medical data extractor. Extract the patient's name, severity (High, Medium, Low), symptoms, age, gender, and village from the transcript. Also, based on the symptoms, suggest a list of medicines from this available inventory: [Paracetamol 500mg, Amoxicillin 250mg, Ibuprofen 400mg, Ceftriaxone Inj 1g, ORS Packets]. IMPORTANT: You MUST translate all extracted data into English before returning the JSON, regardless of the language spoken in the transcript. Return ONLY a valid JSON object with keys: patient_name, severity, symptoms, age, gender, village, suggested_medicines (array of strings). If a value is unknown, use null. Do not include markdown formatting."},
         {"role": "user", "content": transcript}
     ]
     
