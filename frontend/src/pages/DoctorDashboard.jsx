@@ -130,19 +130,19 @@ export default function DoctorDashboard() {
         const { data: ticketsData, error: ticketsError } = await supabase
           .from('tickets')
           .select('*')
-          .not('assignedTraineeId', 'is', null);
+          .not('assigned_trainee_id', 'is', null);
 
         if (ticketsError) throw ticketsError;
         
-        // Fetch patient details from Supabase using the patientIds from the tickets
-        const patientIds = [...new Set(ticketsData.map(t => t.patientId))].filter(Boolean);
+        // Fetch patient details from Supabase using the patient_ids from the tickets
+        const patientIds = [...new Set(ticketsData.map(t => t.patient_id))].filter(Boolean);
         let patientsData = [];
         
         if (patientIds.length > 0) {
           const { data: pData, error: pError } = await supabase
             .from('patients')
             .select('*')
-            .in('patientId', patientIds); 
+            .in('id', patientIds); 
             
           if (!pError && pData) {
             patientsData = pData;
@@ -152,28 +152,26 @@ export default function DoctorDashboard() {
         // Map the patient info by ID for quick lookup
         const patientMap = {};
         patientsData.forEach(p => {
-          const id = p.patientId || p.id;
+          const id = p.id;
           patientMap[id] = p;
         });
 
         const formatted = ticketsData.map(t => {
-           const pInfo = patientMap[t.patientId] || {};
+           const pInfo = patientMap[t.patient_id] || {};
            return {
-             id: t.ticketId,
-             name: pInfo.name || 'Patient ' + t.patientId.slice(0, 4),
+             id: t.id,
+             name: pInfo.name || 'Patient ' + t.patient_id?.slice(0, 4),
              age: pInfo.age || 45,
              gender: pInfo.gender || 'Not Specified',
              village: pInfo.address || 'N/A',
              phone: pInfo.phone || 'N/A',
              timeAgo: t.createdAt ? new Date(t.createdAt).toLocaleTimeString() : 'Unknown',
              previousVisits: pInfo.previousVisits || 0,
-             trainee: 'Trainee ' + (t.assignedTraineeId?.slice(0,4) || 'Unknown'),
-             vitals: t.vitalsData ? {
-                sys: t.vitalsData.sys || '',
-                dia: t.vitalsData.dia || '',
-                hr: t.vitalsData.hr || '',
-                spo2: t.vitalsData.spo2 || '',
-                temp: t.vitalsData.temp || ''
+             trainee: 'Trainee ' + (t.assigned_trainee_id?.slice(0,4) || 'Unknown'),
+             vitals: t.vitals_data ? {
+                bp: t.vitals_data.bp || '',
+                spo2: t.vitals_data.spo2 || '',
+                temp: t.vitals_data.temp || ''
              } : null,
              physicalNotes: 'Status: ' + t.ticketStatus,
              symptomsSummary: t.symptomsSummary || '',
