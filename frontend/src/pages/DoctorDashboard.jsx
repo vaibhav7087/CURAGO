@@ -71,6 +71,7 @@ export default function DoctorDashboard() {
   const [selectedId, setSelectedId] = useState(null)
   const [selectedReportId, setSelectedReportId] = useState(null)
   const [outbreaks, setOutbreaks] = useState([])
+  const [analyticsData, setAnalyticsData] = useState(null)
 
   useEffect(() => {
     const fetchOutbreaks = async () => {
@@ -80,6 +81,7 @@ export default function DoctorDashboard() {
         if (data.outbreaks) {
           setOutbreaks(data.outbreaks);
         }
+        setAnalyticsData(data);
       } catch (err) {
         console.error("Failed to fetch outbreak analytics:", err);
       }
@@ -521,10 +523,10 @@ export default function DoctorDashboard() {
                 <div className="panel-card" style={{ borderColor: '#3b82f6', borderWidth: '2px' }}>
                   <div className="panel-title" style={{ color: '#2563eb' }}>🩺 Physical Vitals (Recorded by Trainee)</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '12px' }}>
-                    {Object.entries(patient.rawTicket.vitals_data).map(([key, val]) => (
+                    {Object.entries(patient.rawTicket.vitals_data).filter(([key]) => !['extra_notes', 'photo_urls'].includes(key)).map(([key, val]) => (
                        <div key={key} style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '8px' }}>
-                          <div style={{ fontSize: '11px', color: '#60a5fa', textTransform: 'uppercase', fontWeight: 600 }}>{key}</div>
-                          <div style={{ fontSize: '15px', color: '#1e3a8a', fontWeight: 500 }}>{val}</div>
+                          <div style={{ fontSize: '11px', color: '#60a5fa', textTransform: 'uppercase', fontWeight: 600 }}>{key.replace(/_/g, ' ')}</div>
+                          <div style={{ fontSize: '15px', color: '#1e3a8a', fontWeight: 500 }}>{typeof val === 'object' ? JSON.stringify(val) : val}</div>
                        </div>
                     ))}
                   </div>
@@ -922,34 +924,124 @@ export default function DoctorDashboard() {
         </>
         ) : activeTab === 'analytics' ? (
           /* ANALYTICS VIEW */
-          <main className="doc-details" style={{ alignItems: 'flex-start' }}>
+          <main className="doc-details" style={{ alignItems: 'flex-start', overflow: 'auto' }}>
             <div className="settings-container" style={{ width: '100%', maxWidth: '1000px' }}>
                <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text)' }}>Epidemic Analytics & Outbreaks</h2>
-               
+
+               {/* Summary Cards */}
+               {analyticsData && (
+                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                   <div style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', padding: '20px', borderRadius: '12px', color: 'white' }}>
+                     <div style={{ fontSize: '13px', opacity: 0.8 }}>Total Patients</div>
+                     <div style={{ fontSize: '32px', fontWeight: 800 }}>{analyticsData.total_patients}</div>
+                   </div>
+                   <div style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', padding: '20px', borderRadius: '12px', color: 'white' }}>
+                     <div style={{ fontSize: '13px', opacity: 0.8 }}>Critical (High Severity)</div>
+                     <div style={{ fontSize: '32px', fontWeight: 800 }}>{analyticsData.critical_count}</div>
+                   </div>
+                   <div style={{ background: 'linear-gradient(135deg, #10b981, #047857)', padding: '20px', borderRadius: '12px', color: 'white' }}>
+                     <div style={{ fontSize: '13px', opacity: 0.8 }}>Resolved</div>
+                     <div style={{ fontSize: '32px', fontWeight: 800 }}>{analyticsData.resolved_count}</div>
+                   </div>
+                 </div>
+               )}
+
+               {/* Outbreak Warnings */}
+               <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>⚠️ Outbreak Warnings</h3>
                {outbreaks.length === 0 ? (
-                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)', background: 'var(--surface-light)', borderRadius: '12px' }}>
-                    No significant outbreaks detected in the last 4 days.
+                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)', background: 'var(--surface-light)', borderRadius: '12px', marginBottom: '24px' }}>
+                    No significant outbreaks detected.
                  </div>
                ) : (
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
                    {outbreaks.map((outbreak, idx) => (
-                     <div key={idx} style={{ background: 'var(--surface-light)', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #ef4444' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>{outbreak.symptom.charAt(0).toUpperCase() + outbreak.symptom.slice(1)} Outbreak</h3>
-                          <span style={{ background: '#fef2f2', color: '#ef4444', padding: '4px 12px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
-                            {outbreak.count} Cases
+                     <div key={idx} style={{ background: 'var(--surface-light)', padding: '16px 20px', borderRadius: '12px', borderLeft: '4px solid #ef4444' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text)' }}>📍 {outbreak.village}</h4>
+                          <span style={{ background: outbreak.alert_level === 'High' ? '#fef2f2' : '#fefce8', color: outbreak.alert_level === 'High' ? '#ef4444' : '#ca8a04', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>
+                            {outbreak.case_count} Cases — {outbreak.alert_level}
                           </span>
                         </div>
-                        <p style={{ margin: '0 0 8px 0', color: 'var(--muted)' }}>Detected across <strong>{outbreak.villages.length}</strong> villages:</p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {outbreak.villages.map((v, i) => (
-                            <span key={i} style={{ background: 'var(--border)', padding: '4px 10px', borderRadius: '6px', fontSize: '13px' }}>{v}</span>
-                          ))}
-                        </div>
+                        <p style={{ margin: '6px 0 0 0', color: 'var(--muted)', fontSize: '14px' }}>{outbreak.message}</p>
                      </div>
                    ))}
                  </div>
                )}
+
+               {/* Region Breakdown */}
+               {analyticsData?.region_breakdown && (
+                 <>
+                   <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>🗺️ Region Breakdown</h3>
+                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                     {analyticsData.region_breakdown.map((r, i) => (
+                       <div key={i} style={{ background: 'var(--surface-light)', padding: '16px', borderRadius: '10px' }}>
+                         <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text)', marginBottom: '8px' }}>{r.region}</div>
+                         <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary)' }}>{r.total_cases}</div>
+                         <div style={{ display: 'flex', gap: '8px', marginTop: '6px', fontSize: '12px' }}>
+                           <span style={{ color: '#ef4444' }}>🔴 {r.high_severity}</span>
+                           <span style={{ color: '#f59e0b' }}>🟡 {r.medium_severity}</span>
+                           <span style={{ color: '#10b981' }}>🟢 {r.low_severity}</span>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </>
+               )}
+
+               {/* Disease & Age/Gender Breakdowns */}
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                 {/* Disease */}
+                 {analyticsData?.disease_breakdown && (
+                   <div style={{ background: 'var(--surface-light)', padding: '20px', borderRadius: '12px' }}>
+                     <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>🦠 Disease Breakdown</h3>
+                     {analyticsData.disease_breakdown.map((d, i) => (
+                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                         <span style={{ color: 'var(--text)' }}>{d.disease}</span>
+                         <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{d.count}</span>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+                 {/* Age */}
+                 {analyticsData?.age_breakdown && (
+                   <div style={{ background: 'var(--surface-light)', padding: '20px', borderRadius: '12px' }}>
+                     <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>👥 Age Group Distribution</h3>
+                     {analyticsData.age_breakdown.map((a, i) => (
+                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                         <span style={{ color: 'var(--text)' }}>{a.group}</span>
+                         <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{a.count}</span>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
+
+               {/* Gender & Status */}
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                 {analyticsData?.gender_breakdown && (
+                   <div style={{ background: 'var(--surface-light)', padding: '20px', borderRadius: '12px' }}>
+                     <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>⚧ Gender</h3>
+                     {analyticsData.gender_breakdown.map((g, i) => (
+                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                         <span style={{ color: 'var(--text)' }}>{g.gender}</span>
+                         <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{g.count}</span>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+                 {analyticsData?.status_breakdown && (
+                   <div style={{ background: 'var(--surface-light)', padding: '20px', borderRadius: '12px' }}>
+                     <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>📋 Ticket Status</h3>
+                     {analyticsData.status_breakdown.map((s, i) => (
+                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                         <span style={{ color: 'var(--text)', textTransform: 'capitalize' }}>{s.status.replace(/_/g, ' ')}</span>
+                         <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{s.count}</span>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
+
             </div>
           </main>
         ) : (
