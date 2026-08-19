@@ -4,6 +4,7 @@ import sys
 import uuid
 import random
 import time
+from datetime import datetime
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -12,7 +13,7 @@ load_dotenv('.env')
 from app.core.database import supabase
 
 def seed():
-    print('Seeding Dengue pandemic dummy data...')
+    print('Seeding Dengue pandemic dummy data with orders...')
     
     patients = [
         {'name': 'Aarav Patel', 'phone_number': '919876543210', 'village': 'Palampur', 'age': 28, 'gender': 'Male'},
@@ -46,55 +47,65 @@ def seed():
         'Fever, fatigue, mild rash on arms and legs'
     ]
     
-    statuses = [
-        'open', 'needs_vitals', 'doctor_review', 'approved', 'closed', 'follow_up'
-    ]
+    statuses = (
+        ['open'] * 4 +
+        ['needs_vitals'] * 3 +
+        ['doctor_review'] * 4 +
+        ['approved'] * 3 +
+        ['closed'] * 2 +
+        ['follow_up'] * 2
+    )
+    random.shuffle(statuses)
     
     trainee_id = '11111111-1111-1111-1111-111111111111'
     
-    # Optional: Clear existing tickets/patients to make it clean? No, let's just insert.
-    # Actually, we should probably delete all tickets and patients to make the dashboard look like a clean Dengue outbreak dashboard for the demo.
-    
     print('Clearing old records for a clean demo...')
+    supabase.table('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
     supabase.table('tickets').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
     supabase.table('patients').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
     
-    for p in patients:
+    for i, p in enumerate(patients):
         res = supabase.table('patients').insert(p).execute()
         patient_id = res.data[0]['id']
         
-        status = random.choice(statuses)
+        status = statuses[i]
         symptoms = random.choice(dengue_symptoms)
         
         ticket = {
             'patient_id': patient_id,
             'symptoms_summary': symptoms,
-            'severity': random.choice(['Medium', 'High', 'High']), # Skew towards High for Dengue
+            'severity': random.choice(['Medium', 'High', 'High']),
             'status': status,
             'vitals_data': {}
         }
         
-        if status == 'needs_vitals':
+        if status in ['needs_vitals', 'doctor_review', 'approved', 'closed', 'follow_up']:
             ticket['assigned_trainee_id'] = trainee_id
         
-        if status in ['doctor_review', 'approved', 'closed']:
+        if status in ['doctor_review', 'approved', 'closed', 'follow_up']:
             ticket['vitals_data'] = {
                 'temperature': str(random.randint(101, 104)) + '.0',
                 'blood_pressure': '110/70',
                 'spo2': str(random.randint(94, 98)),
                 'extra_notes': 'Patient looks very weak, possible dehydration.'
             }
-            if status != 'doctor_review':
-                ticket['assigned_trainee_id'] = trainee_id
             
             ticket['extracted_symptoms'] = {
-                'advanced_diagnosis': 'Clinical presentation is highly suspicious for Dengue Fever. High fever with severe myalgia/arthralgia. Monitor platelets and hematocrit closely. Advise aggressive oral rehydration.'
+                'advanced_diagnosis': '**Likely Diagnosis**\n- Clinical presentation is highly suspicious for Dengue Fever.\n\n**Key Findings**\n- High fever with severe myalgia/arthralgia.\n- Mild skin rash observed.\n\n**Recommended Treatment**\n- Advise aggressive oral rehydration.\n- Paracetamol for fever management.\n\n**Warning Signs**\n- Monitor platelets and hematocrit closely.\n- Watch for signs of bleeding.'
             }
             
-        supabase.table('tickets').insert(ticket).execute()
+        res_ticket = supabase.table('tickets').insert(ticket).execute()
+        ticket_id = res_ticket.data[0]['id']
+        
+        if status in ['approved', 'closed']:
+            try:
+                supabase.table('orders').insert({'ticket_id': ticket_id}).execute()
+            except Exception as e:
+                print('Skipping order seeding due to schema error:', e)
+            
         time.sleep(0.1)
         
-    print('Dengue pandemic seeding complete! Dashboard is now populated.')
+    print('Dengue pandemic seeding complete! Dashboard is now populated with detailed data.')
 
 if __name__ == '__main__':
     seed()

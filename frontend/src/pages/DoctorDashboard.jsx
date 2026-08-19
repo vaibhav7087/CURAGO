@@ -156,26 +156,27 @@ export default function DoctorDashboard() {
           patientMap[id] = p;
         });
 
-        const formatted = ticketsData.map(t => {
+         const formatted = ticketsData.map(t => {
            const pInfo = patientMap[t.patient_id] || {};
            return {
              id: t.id,
              name: pInfo.name || 'Patient ' + t.patient_id?.slice(0, 4),
              age: pInfo.age || 45,
              gender: pInfo.gender || 'Not Specified',
-             village: pInfo.address || 'N/A',
-             phone: pInfo.phone || 'N/A',
-             timeAgo: t.createdAt ? new Date(t.createdAt).toLocaleTimeString() : 'Unknown',
+             village: pInfo.village || 'N/A',
+             phone: pInfo.phone_number || 'N/A',
+             timeAgo: t.created_at ? new Date(t.created_at).toLocaleTimeString() : 'Unknown',
              previousVisits: pInfo.previousVisits || 0,
              trainee: 'Trainee ' + (t.assigned_trainee_id?.slice(0,4) || 'Unknown'),
              vitals: t.vitals_data ? {
-                bp: t.vitals_data.bp || '',
+                bp: t.vitals_data.blood_pressure || '',
                 spo2: t.vitals_data.spo2 || '',
-                temp: t.vitals_data.temp || ''
+                temp: t.vitals_data.temperature || ''
              } : null,
-             physicalNotes: 'Status: ' + t.ticketStatus,
-             symptomsSummary: t.symptomsSummary || '',
-             isUrgent: t.severityScore > 7
+             physicalNotes: 'Status: ' + t.status,
+             symptomsSummary: t.symptoms_summary || '',
+             isUrgent: t.severity === 'High',
+             photoUrls: t.vitals_data?.photo_urls || []
            };
         });
 
@@ -538,7 +539,7 @@ export default function DoctorDashboard() {
                 {patient.rawTicket?.extracted_symptoms?.advanced_diagnosis && (
                   <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
                     <div style={{ fontSize: '12px', color: '#7c3aed', fontWeight: 600, marginBottom: '4px' }}>✨ ADVANCED AI DIAGNOSIS</div>
-                    <div style={{ color: '#334155', fontSize: '14px', lineHeight: '1.5' }}>{patient.rawTicket.extracted_symptoms.advanced_diagnosis}</div>
+                    <div style={{ color: '#334155', fontSize: '14px', lineHeight: '1.5', whiteSpace: 'pre-line' }}>{patient.rawTicket.extracted_symptoms.advanced_diagnosis}</div>
                   </div>
                 )}
                 

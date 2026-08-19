@@ -69,20 +69,34 @@ def extract_patient_data(transcript: str) -> dict:
     
     response_content = ""
     try:
-        if gemini_client:
-            print("Attempting extraction with Gemini...")
-            # Use Gemini to ensure rock-solid reliability
-            prompt_str = prompt[0]["content"] + "\n\nTranscript:\n" + prompt[1]["content"]
-            response = gemini_client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt_str
+        # 1. Primary: Try Groq with the verified model
+        if groq_client:
+            print("Attempting extraction with Groq (openai/gpt-oss-20b)...")
+            response = groq_client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=prompt,
+                max_tokens=1024,
+                temperature=0.2
             )
-            response_content = response.text
+            response_content = response.choices[0].message.content
         else:
-            raise Exception("No LLM client available")
+            raise Exception("Groq not configured")
     except Exception as e:
-        print(f"Extraction failed: {e}")
-        return {}
+        print(f"Extraction failed with Groq: {e}. Falling back to Gemini...")
+        try:
+            if gemini_client:
+                print("Attempting extraction with Gemini fallback...")
+                prompt_str = prompt[0]["content"] + "\n\nTranscript:\n" + prompt[1]["content"]
+                response = gemini_client.models.generate_content(
+                    model="gemini-3.6-flash",
+                    contents=prompt_str
+                )
+                response_content = response.text
+            else:
+                raise Exception("No fallback LLM available")
+        except Exception as fallback_e:
+            print(f"Fallback extraction failed: {fallback_e}")
+            return {}
 
     # Clean the response to ensure it's valid JSON
     cleaned_content = response_content.replace('```json', '').replace('```', '').strip()

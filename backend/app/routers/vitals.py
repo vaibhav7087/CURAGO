@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import supabase
-from app.services.llm import gemini_client
+from app.services.llm import gemini_client, groq_client
 import json
 
 router = APIRouter()
@@ -13,6 +13,7 @@ class VitalsInput(BaseModel):
     spo2: Optional[str] = None
     pulse: Optional[str] = None
     extra_notes: Optional[str] = None
+    photo_urls: Optional[list] = None
 
 @router.post("/{ticket_id}")
 async def submit_vitals(ticket_id: str, vitals: VitalsInput):
@@ -45,23 +46,55 @@ async def submit_vitals(ticket_id: str, vitals: VitalsInput):
     If this is the FIRST time you are seeing this data (no 'extra_notes' provided), and you need the trainee to perform specific additional physical checks (e.g., 'Check eyes for yellowness', 'Palpate stomach'), return a JSON object with:
     {{"status": "needs_more_checks", "requested_checks": ["Check X", "Check Y"]}}
     
-    CRITICAL RULE: If the trainee HAS provided 'extra_notes' in the vitals data, it means they just completed your requested checks. You MUST NOT ask for more checks. You MUST return a JSON object with:
-    {{"status": "complete", "advanced_diagnosis": "Your detailed differential diagnosis based on ALL data including the extra notes..."}}
+    CRITICAL RULE: If the trainee HAS provided 'extra_notes' or 'photo_urls' in the vitals data, it means they just completed your requested checks. You MUST NOT ask for more checks. 
+    You MUST return a JSON object with:
+    {{"status": "complete", "advanced_diagnosis": "Your detailed differential diagnosis based on ALL data including the extra notes. Use markdown bullet points."}}
     
-    Return ONLY valid JSON. No markdown formatting.
+    IMPORTANT: Format your advanced diagnosis like this:
+    **Likely Diagnosis**
+    - [Point 1]
+    - [Point 2]
+    
+    **Key Findings**
+    - [Point 1]
+    
+    **Recommended Treatment**
+    - [Point 1]
+    
+    Return ONLY valid JSON. No markdown formatting outside of the advanced_diagnosis string.
     """
     
     content = ""
     try:
-        response = gemini_client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt,
-        )
-        content = response.text
-            
+        if groq_client:
+            print("Attempting analysis with Groq (openai/gpt-oss-20b)...")
+            response = groq_client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=[
+                    {"role": "system", "content": "You are a helpful AI diagnostic assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1024,
+                temperature=0.2
+            )
+            content = response.choices[0].message.content
+        else:
+            raise Exception("Groq not configured")
     except Exception as e:
-        print(f"Error with Gemini LLM: {e}")
-        return {"status": "error", "vitals_saved": True, "message": "Failed to generate AI analysis."}
+        print(f"Analysis failed with Groq: {e}. Falling back to Gemini...")
+        try:
+            if gemini_client:
+                print("Attempting analysis with Gemini fallback...")
+                response = gemini_client.models.generate_content(
+                    model="gemini-3.6-flash",
+                    contents=prompt,
+                )
+                content = response.text
+            else:
+                raise Exception("No fallback LLM available")
+        except Exception as fallback_e:
+            print(f"Error with Gemini fallback: {fallback_e}")
+            return {"status": "error", "vitals_saved": True, "message": "Failed to generate AI analysis."}
 
     if not content:
         return {"status": "error", "vitals_saved": True, "message": "No response from AI."}
