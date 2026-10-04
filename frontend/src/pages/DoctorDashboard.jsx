@@ -104,9 +104,10 @@ export default function DoctorDashboard() {
         
         const formatted = (ticketsData || []).map(t => {
           const pInfo = t.patients || {};
+          const fallbackName = pInfo.phone_number ? `Patient (${pInfo.phone_number.slice(-4)})` : (t.patient_id ? `Patient #${t.patient_id.slice(0, 4)}` : `Ticket #${t.id.slice(0, 4)}`);
           return {
             id: t.id,
-            name: pInfo.name || 'Unknown Patient',
+            name: (pInfo.name && pInfo.name !== 'Unknown Patient') ? pInfo.name : fallbackName,
             age: pInfo.age || 'N/A',
             gender: pInfo.gender || 'Not Specified',
             village: pInfo.village || 'N/A',

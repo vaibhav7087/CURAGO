@@ -177,7 +177,7 @@ async def end_call_webhook(request: Request):
         severity = extracted.get("severity") or severity or "Medium"
         symptoms = extracted.get("symptoms") or symptoms or "Unspecified symptoms"
         if isinstance(symptoms, list):
-            symptoms = ", ".join(symptoms)
+            symptoms = ", ".join(symptoms)g
             
         age = extracted.get("age") or age
         gender = extracted.get("gender") or gender

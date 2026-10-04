@@ -50,8 +50,11 @@ class _TraineeDashboardState extends State<TraineeDashboard> {
               itemBuilder: (context, index) {
                 final ticket = patients[index];
                 final patientInfo = ticket['patients'] ?? {};
+                final pName = (patientInfo['name'] != null && patientInfo['name'] != 'Unknown Patient') 
+                    ? patientInfo['name'] 
+                    : (patientInfo['phone_number'] != null ? 'Patient (\${patientInfo['phone_number']})' : 'Patient #\${ticket['id'].toString().substring(0, 4)}');
                 return ListTile(
-                  title: Text(patientInfo['name'] ?? 'Unknown Patient'),
+                  title: Text(pName),
                   subtitle: Text(ticket['symptoms_summary'] ?? 'No symptoms logged'),
                   trailing: ElevatedButton(
                     onPressed: () {
