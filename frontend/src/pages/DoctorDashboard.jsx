@@ -72,6 +72,8 @@ export default function DoctorDashboard() {
   const [selectedReportId, setSelectedReportId] = useState(null)
   const [outbreaks, setOutbreaks] = useState([])
   const [analyticsData, setAnalyticsData] = useState(null)
+  const [enhancedAnalytics, setEnhancedAnalytics] = useState(null);
+  const [severityPrediction, setSeverityPrediction] = useState(null);
 
   useEffect(() => {
     const fetchOutbreaks = async () => {
@@ -86,9 +88,20 @@ export default function DoctorDashboard() {
         console.error("Failed to fetch outbreak analytics:", err);
       }
     };
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://curago-backend.onrender.com';
+    const fetchEnhancedAnalytics = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/analytics/enhanced`);
+        const data = await response.json();
+        setEnhancedAnalytics(data);
+      } catch (err) {
+        console.error('Enhanced analytics fetch failed:', err);
+      }
+    };
+    fetchEnhancedAnalytics();
     fetchOutbreaks();
     // Poll every minute
-    const interval = setInterval(fetchOutbreaks, 60000);
+    const interval = setInterval(() => { fetchOutbreaks(); fetchEnhancedAnalytics(); }, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -211,6 +224,26 @@ export default function DoctorDashboard() {
   const report = traineeReports.find(r => r.id === selectedReportId) || null
 
   const [prescriptions, setPrescriptions] = useState({})
+  const [recommendation, setRecommendation] = useState(null)
+  const [rxSuggested, setRxSuggested] = useState({})
+
+  const logRx = (ticketId, choice, suggested, approved) => {
+    try {
+      const key = 'rx_feedback_log';
+      const log = JSON.parse(localStorage.getItem(key) || '[]');
+      log.push({ ticket_id: ticketId, choice, suggested, approved, ts: new Date().toISOString() });
+      localStorage.setItem(key, JSON.stringify(log));
+    } catch (e) { console.error('rx log failed', e); }
+    console.log(`[rx] ${ticketId} -> ${choice}`);
+    try {
+      const API = import.meta.env.VITE_API_BASE_URL || 'https://curago-backend.onrender.com';
+      fetch(`${API}/api/rx-feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: ticketId, choice, suggested, approved }),
+      }).catch(() => {});
+    } catch (e) { /* non-fatal: localStorage already has it */ }
+  };
   
   const [searchMed, setSearchMed] = useState('')
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
@@ -275,6 +308,41 @@ export default function DoctorDashboard() {
   const patientPrescriptions = prescriptions[selectedId] || []
   const hasLowStock = patientPrescriptions.some(m => m.type === 'low')
 
+  useEffect(() => {
+    setRecommendation(null);
+    if (!selectedId || !patient) return;
+    const API = import.meta.env.VITE_API_BASE_URL || 'https://curago-backend.onrender.com';
+    fetch(`${API}/api/recommend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symptoms: (patient.symptoms || []).join('. '),
+        age: typeof patient.age === 'number' ? patient.age : undefined,
+      }),
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.recommendation) setRecommendation(d.recommendation); })
+      .catch(() => {});
+  }, [selectedId]);
+
+  const handleAcceptSuggestions = () => {
+    if (!recommendation?.suggestions?.length) return;
+    const items = recommendation.suggestions.map((s, i) => {
+      const match = availableMedicines.find(m => m.name.toLowerCase() === s.medicine.toLowerCase());
+      return match || { id: `rx-${i}-${Date.now()}`, name: s.medicine, desc: s.dose, stock: 100, type: 'ok', unit: 'units (L1)' };
+    });
+    setPrescriptions(prev => ({ ...prev, [selectedId]: items }));
+    setRxSuggested(prev => ({ ...prev, [selectedId]: items.map(m => m.name) }));
+    addToast('AI suggestions added — review, edit if needed, then approve');
+  };
+
+  const handleDismissSuggestions = () => {
+    if (recommendation?.suggestions?.length) {
+      logRx(selectedId, 'reject', recommendation.suggestions.map(s => s.medicine), []);
+    }
+    setRecommendation(null);
+  };
+
   const handleApprove = async () => {
     if (patientPrescriptions.length === 0) {
       addToast('Cannot approve without prescribing medicines.', 'error')
@@ -302,8 +370,21 @@ export default function DoctorDashboard() {
       if (orderError) console.error("Failed to create order record:", orderError);
 
       addToast(`${patient.name}'s ticket approved and dispatched.`, 'success')
-      
+
+      {
+        const suggested = rxSuggested[selectedId];
+        const finalNames = patientPrescriptions.map(m => m.name);
+        const choice = !suggested ? 'manual'
+          : (suggested.length === finalNames.length && suggested.every(n => finalNames.includes(n)) ? 'accept' : 'edit');
+        logRx(selectedId, choice, suggested || [], finalNames);
+      }
+
       setPrescriptions(prev => {
+        const copy = { ...prev }
+        delete copy[selectedId]
+        return copy
+      })
+      setRxSuggested(prev => {
         const copy = { ...prev }
         delete copy[selectedId]
         return copy
@@ -553,6 +634,78 @@ export default function DoctorDashboard() {
                   ))}
                 </div>
               </div>
+
+              {/* DS Severity Prediction Card */}
+              {patient.rawTicket?.extracted_symptoms?.ds_prediction && (
+                <div className="ds-severity-card" style={{
+                  background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <h4 style={{color: '#e94560', marginBottom: '8px', fontSize: '14px'}}>
+                    AI Triage Assessment (Decision Support)
+                  </h4>
+                  {patient.rawTicket.extracted_symptoms.ds_prediction.abstain ? (
+                    <p style={{color: '#888', fontSize: '13px'}}>
+                      Insufficient data for confident prediction
+                    </p>
+                  ) : (
+                    <>
+                      <div style={{display: 'flex', gap: '16px', alignItems: 'center'}}>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          background: patient.rawTicket.extracted_symptoms.ds_prediction.predicted_severity === 'High'
+                            ? 'rgba(233,69,96,0.2)' : 'rgba(46,213,115,0.2)',
+                          color: patient.rawTicket.extracted_symptoms.ds_prediction.predicted_severity === 'High'
+                            ? '#e94560' : '#2ed573'
+                        }}>
+                          {patient.rawTicket.extracted_symptoms.ds_prediction.predicted_severity} Severity
+                        </span>
+                        <span style={{color: '#888', fontSize: '12px'}}>
+                          Confidence: {(patient.rawTicket.extracted_symptoms.ds_prediction.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <p style={{color: '#666', fontSize: '11px', marginTop: '8px'}}>
+                        Model: CDC NHAMCS XGBoost · This is decision-support only — doctor&apos;s verdict takes precedence.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Adaptive Rx Suggestions Card */}
+              {recommendation && !recommendation.abstain && recommendation.suggestions?.length > 0 && (
+                <div className="ds-severity-card" style={{
+                  background: 'linear-gradient(135deg, #0f3d2e 0%, #14532d 100%)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <h4 style={{color: '#4ade80', marginBottom: '4px', fontSize: '14px'}}>
+                    Adaptive Prescription ({recommendation.model} · {(recommendation.confidence * 100).toFixed(0)}%)
+                  </h4>
+                  {recommendation.suggestions.map((s, i) => (
+                    <div key={i} style={{marginTop: '8px'}}>
+                      <div style={{color: '#fff', fontSize: '13px', fontWeight: 'bold'}}>{s.medicine}</div>
+                      <div style={{color: '#bbf7d0', fontSize: '12px'}}>{s.dose}</div>
+                      <div style={{color: '#86efac', fontSize: '11px', fontStyle: 'italic'}}>{s.why}</div>
+                    </div>
+                  ))}
+                  <div style={{display: 'flex', gap: '8px', marginTop: '12px'}}>
+                    <button className="approve-btn" onClick={handleAcceptSuggestions}>Accept suggestions</button>
+                    <button className="remove-btn" onClick={handleDismissSuggestions} title="Reject AI suggestions">Dismiss</button>
+                  </div>
+                  <p style={{color: '#666', fontSize: '11px', marginTop: '8px'}}>
+                    Decision-support only — review, edit if needed, then approve below.
+                  </p>
+                </div>
+              )}
 
               {/* Prescription Card */}
             <div className="panel-card" style={{ zIndex: 10 }}>
@@ -940,14 +1093,120 @@ export default function DoctorDashboard() {
                      <div style={{ fontSize: '13px', opacity: 0.8 }}>Critical (High Severity)</div>
                      <div style={{ fontSize: '32px', fontWeight: 800 }}>{analyticsData.critical_count}</div>
                    </div>
-                   <div style={{ background: 'linear-gradient(135deg, #10b981, #047857)', padding: '20px', borderRadius: '12px', color: 'white' }}>
-                     <div style={{ fontSize: '13px', opacity: 0.8 }}>Resolved</div>
-                     <div style={{ fontSize: '32px', fontWeight: 800 }}>{analyticsData.resolved_count}</div>
-                   </div>
-                 </div>
-               )}
+                    <div style={{ background: 'linear-gradient(135deg, #10b981, #047857)', padding: '20px', borderRadius: '12px', color: 'white' }}>
+                      <div style={{ fontSize: '13px', opacity: 0.8 }}>Resolved</div>
+                      <div style={{ fontSize: '32px', fontWeight: 800 }}>{analyticsData.resolved_count}</div>
+                    </div>
+                  </div>
+                )}
 
-               {/* Outbreak Warnings */}
+                {/* Enhanced Analytics Section */}
+                {enhancedAnalytics && (
+                  <div className="enhanced-analytics-strip" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    marginBottom: '24px'
+                  }}>
+                    {/* Daily Volume Trend */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, #0a3d62, #1e3799)',
+                      borderRadius: '12px',
+                      padding: '16px'
+                    }}>
+                      <h4 style={{color: '#dfe6e9', fontSize: '13px', marginBottom: '8px'}}>Daily Ticket Volume</h4>
+                      <div style={{display: 'flex', alignItems: 'flex-end', gap: '2px', height: '60px'}}>
+                        {enhancedAnalytics.daily_trend?.slice(-14).map((d, i) => (
+                          <div key={i} style={{
+                            flex: 1,
+                            background: d.count > 3 ? '#e94560' : '#0abde3',
+                            height: `${Math.max(4, (d.count / Math.max(...enhancedAnalytics.daily_trend.map(x => x.count), 1)) * 60)}px`,
+                            borderRadius: '2px 2px 0 0',
+                            title: `${d.date}: ${d.count} tickets`
+                          }} />
+                        ))}
+                      </div>
+                      <p style={{color: '#888', fontSize: '11px', marginTop: '4px'}}>Last 14 days</p>
+                    </div>
+
+                    {/* Order Fulfillment */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, #2d3436, #636e72)',
+                      borderRadius: '12px',
+                      padding: '16px'
+                    }}>
+                      <h4 style={{color: '#dfe6e9', fontSize: '13px', marginBottom: '8px'}}>Order Fulfillment</h4>
+                      <div style={{fontSize: '24px', fontWeight: 'bold', color: '#2ed573'}}>
+                        {enhancedAnalytics.order_stats?.delivered || 0}
+                        <span style={{fontSize: '14px', color: '#888'}}>
+                          /{enhancedAnalytics.order_stats?.total || 0} delivered
+                        </span>
+                      </div>
+                      <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
+                        <span style={{fontSize: '11px', color: '#ffa502'}}>
+                          {enhancedAnalytics.order_stats?.in_transit || 0} in transit
+                        </span>
+                        <span style={{fontSize: '11px', color: '#ff6348'}}>
+                          {enhancedAnalytics.order_stats?.pending || 0} pending
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Median Resolution Time */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, #6c5ce7, #a29bfe)',
+                      borderRadius: '12px',
+                      padding: '16px'
+                    }}>
+                      <h4 style={{color: '#dfe6e9', fontSize: '13px', marginBottom: '8px'}}>Resolution Time</h4>
+                      <div style={{fontSize: '24px', fontWeight: 'bold', color: '#fff'}}>
+                        {enhancedAnalytics.median_resolution_hours
+                          ? `${enhancedAnalytics.median_resolution_hours}h`
+                          : 'N/A'}
+                      </div>
+                      <p style={{color: 'rgba(255,255,255,0.6)', fontSize: '11px', marginTop: '4px'}}>
+                        Median ticket to closed
+                      </p>
+                    </div>
+
+                    {/* Outbreak Alerts */}
+                    {enhancedAnalytics.outbreak_alerts?.length > 0 && (
+                      <div style={{
+                        background: 'linear-gradient(135deg, #c0392b, #e74c3c)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        gridColumn: 'span 2'
+                      }}>
+                        <h4 style={{color: '#fff', fontSize: '13px', marginBottom: '8px'}}>DS Outbreak Alerts</h4>
+                        {enhancedAnalytics.outbreak_alerts.map((alert, i) => (
+                          <div key={i} style={{
+                            background: 'rgba(0,0,0,0.2)',
+                            borderRadius: '8px',
+                            padding: '8px 12px',
+                            marginBottom: '6px',
+                            fontSize: '12px',
+                            color: '#fff'
+                          }}>
+                            <strong>{alert.village}</strong>: {alert.current_week_cases} cases this week
+                            (avg {alert.historical_weekly_avg}/wk) · z={alert.z_score} ·
+                            <span style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: alert.alert_level === 'Critical' ? '#fff' : 'rgba(255,255,255,0.2)',
+                              color: alert.alert_level === 'Critical' ? '#c0392b' : '#fff',
+                              fontWeight: 'bold',
+                              marginLeft: '4px'
+                            }}>
+                              {alert.alert_level}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Outbreak Warnings */}
                <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>⚠️ Outbreak Warnings</h3>
                {outbreaks.length === 0 ? (
                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)', background: 'var(--surface-light)', borderRadius: '12px', marginBottom: '24px' }}>
