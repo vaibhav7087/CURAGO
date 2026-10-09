@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import './doctor.css'
+import IndiaOutbreakHeatmap from '../components/IndiaOutbreakHeatmap'
 
 export default function DoctorDashboard() {
   const navigate = useNavigate()
@@ -1205,6 +1206,9 @@ export default function DoctorDashboard() {
                     )}
                   </div>
                 )}
+
+                {/* National Outbreak Geo-Heatmap */}
+                <IndiaOutbreakHeatmap liveAlerts={enhancedAnalytics?.outbreak_alerts || outbreaks || []} />
 
                 {/* Outbreak Warnings */}
                <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>⚠️ Outbreak Warnings</h3>
