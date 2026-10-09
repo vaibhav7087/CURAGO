@@ -1,0 +1,3 @@
+Model,Accuracy,F1-macro,Top-3,Data Source
+LogReg-TFIDF,0.9458,0.9458,1.0,"Symptom2Disease (n=1200, real)"
+CalibratedSVC-TFIDF,0.9708,0.9708,1.0,"Symptom2Disease (n=1200, real)"
