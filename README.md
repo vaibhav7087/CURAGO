@@ -209,6 +209,42 @@ Curago Backend is configured for easy 1-click deployment on Render.
 
 ---
 
+## 🧬 Data Science Module (`ds/`)
+
+### Datasets Used (all publicly available)
+
+| Dataset | Source | License | Usage |
+|---------|--------|---------|-------|
+| NHAMCS ED 2019 | [CDC/NCHS FTP](ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/) | US Public Domain | Triage severity classifier training |
+| Pharma Sales Data | [Kaggle](https://www.kaggle.com/datasets/milanzdravkovic/pharma-sales-data) | CC-BY-NC 4.0 | Medicine demand forecasting (notebook-only) |
+| IncOVID19 District Data | [data.incovid19.org](https://data.incovid19.org) | Open | Outbreak anomaly detection (if used) |
+
+### External Tools Acknowledged
+
+| Tool | Purpose | Our Contribution |
+|------|---------|-----------------|
+| Groq/OpenAI | LLM inference for symptom extraction | We built the extraction prompt, fallback chain, and JSON parser |
+| Vapi | Voice AI for patient calls | We designed the system prompt, tool-call integration, and webhook pipeline |
+| Supabase | Database + vector search | We designed the schema, RAG pipeline, and all queries |
+| Google Gemini | Embeddings for RAG | We built the knowledge base and similarity search |
+
+### Our Contribution (what we built vs external)
+
+1. **Triage Severity Classifier**: Trained on real CDC NHAMCS data (n=~25,000), XGBoost with class weighting, 5-fold CV, SHAP explainability. Under-triage rate measured and reported.
+2. **Outbreak Detection**: Statistical z-score anomaly detection on ticket clusters by village, with alert severity levels.
+3. **End-to-End System**: Voice call → AI triage → Doctor dashboard → Medicine ordering → Delivery tracking. Every integration point is our code.
+4. **Data Flywheel Architecture**: Models retrain on Curago's own ticket data as it accumulates. CDC/Kaggle data demonstrates the pipeline; production data improves it.
+
+### Reproducing Results
+
+```bash
+cd ds
+pip install -r requirements.txt
+jupyter notebook notebooks/01_triage_severity.ipynb  # Kernel → Restart & Run All
+```
+
+---
+
 ## 🔒 Security & Privacy
 
 - **Data Isolation**: Patient identifiable information (PII) is encrypted and access-controlled through Supabase Row-Level Security (RLS).
