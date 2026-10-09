@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { viewBox, project, countryPath, sriLankaPath, neighborPaths, statePaths } from './indiaGeo';
 
 // Geo coordinates & surveillance data mapped to Curago project centers
 const DEFAULT_CENTERS = [
@@ -8,8 +9,6 @@ const DEFAULT_CENTERS = [
     state: 'Gujarat / Border Hub',
     lat: 20.54,
     lng: 73.18,
-    x: 144,
-    y: 378,
     cases: 8,
     baseline: 2.3,
     zScore: 4.96,
@@ -27,8 +26,6 @@ const DEFAULT_CENTERS = [
     state: 'Uttar Pradesh',
     lat: 28.80,
     lng: 79.02,
-    x: 239,
-    y: 218,
     cases: 5,
     baseline: 1.8,
     zScore: 3.56,
@@ -46,8 +43,6 @@ const DEFAULT_CENTERS = [
     state: 'Uttar Pradesh',
     lat: 27.57,
     lng: 80.68,
-    x: 267,
-    y: 242,
     cases: 3,
     baseline: 1.5,
     zScore: 2.10,
@@ -65,8 +60,6 @@ const DEFAULT_CENTERS = [
     state: 'Bihar',
     lat: 26.15,
     lng: 85.35,
-    x: 342,
-    y: 270,
     cases: 3,
     baseline: 1.7,
     zScore: 1.82,
@@ -84,8 +77,6 @@ const DEFAULT_CENTERS = [
     state: 'Himachal Pradesh',
     lat: 32.11,
     lng: 76.53,
-    x: 199,
-    y: 154,
     cases: 2,
     baseline: 1.4,
     zScore: 1.12,
@@ -103,8 +94,6 @@ const DEFAULT_CENTERS = [
     state: 'Delhi NCR',
     lat: 28.52,
     lng: 77.15,
-    x: 209,
-    y: 224,
     cases: 2,
     baseline: 2.0,
     zScore: 0.85,
@@ -122,8 +111,6 @@ const DEFAULT_CENTERS = [
     state: 'Uttar Pradesh',
     lat: 26.85,
     lng: 81.00,
-    x: 272,
-    y: 256,
     cases: 2,
     baseline: 1.9,
     zScore: 1.20,
@@ -141,8 +128,6 @@ const DEFAULT_CENTERS = [
     state: 'Maharashtra',
     lat: 19.11,
     lng: 72.86,
-    x: 139,
-    y: 405,
     cases: 2,
     baseline: 2.1,
     zScore: 1.15,
@@ -160,8 +145,6 @@ const DEFAULT_CENTERS = [
     state: 'Maharashtra',
     lat: 18.50,
     lng: 73.81,
-    x: 154,
-    y: 417,
     cases: 2,
     baseline: 1.6,
     zScore: 1.45,
@@ -179,8 +162,6 @@ const DEFAULT_CENTERS = [
     state: 'Telangana',
     lat: 17.41,
     lng: 78.44,
-    x: 230,
-    y: 438,
     cases: 1,
     baseline: 1.5,
     zScore: 0.65,
@@ -198,8 +179,6 @@ const DEFAULT_CENTERS = [
     state: 'Karnataka',
     lat: 12.93,
     lng: 77.62,
-    x: 217,
-    y: 525,
     cases: 1,
     baseline: 1.8,
     zScore: 0.54,
@@ -217,8 +196,6 @@ const DEFAULT_CENTERS = [
     state: 'West Bengal',
     lat: 22.58,
     lng: 88.42,
-    x: 392,
-    y: 338,
     cases: 2,
     baseline: 1.8,
     zScore: 1.10,
@@ -232,6 +209,38 @@ const DEFAULT_CENTERS = [
   }
 ];
 
+// Cartographic labels — placed by real lat/lng through the same projection
+const SEA_LABELS = [
+  { text: 'ARABIAN SEA', lng: 69.2, lat: 15.5, size: 10, opacity: 0.5 },
+  { text: 'BAY OF BENGAL', lng: 87.2, lat: 14.0, size: 10, opacity: 0.5 },
+  { text: 'INDIAN OCEAN', lng: 80.0, lat: 7.6, size: 9, opacity: 0.38 }
+];
+
+const COUNTRY_LABELS = [
+  { text: 'PAKISTAN', lng: 69.0, lat: 29.6, size: 9.5, opacity: 0.4 },
+  { text: 'CHINA', lng: 93.5, lat: 31.5, size: 9.5, opacity: 0.4 },
+  { text: 'NEPAL', lng: 84.4, lat: 28.4, size: 8, opacity: 0.45 },
+  { text: 'BANGLADESH', lng: 90.6, lat: 23.6, size: 8, opacity: 0.45 },
+  { text: 'MYANMAR', lng: 95.6, lat: 21.3, size: 8.5, opacity: 0.4 },
+  { text: 'AFGHANISTAN', lng: 66.4, lat: 33.9, size: 8, opacity: 0.35 },
+  { text: 'SRI LANKA', lng: 80.9, lat: 6.6, size: 8, opacity: 0.45 }
+];
+
+function graticulePath() {
+  const segs = [];
+  for (let lng = 68; lng <= 98; lng += 5) {
+    const a = project(lng, 4);
+    const b = project(lng, 40);
+    segs.push(`M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}`);
+  }
+  for (let lat = 8; lat <= 38; lat += 5) {
+    const a = project(64, lat);
+    const b = project(100, lat);
+    segs.push(`M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}`);
+  }
+  return segs.join('');
+}
+
 export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
   const [selectedCenter, setSelectedCenter] = useState(DEFAULT_CENTERS[0]); // Dharampur default
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'outbreak' | 'critical'
@@ -239,10 +248,11 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
 
   // Merge live backend alerts if present
   const centers = useMemo(() => {
-    return DEFAULT_CENTERS.map(c => {
-      const match = liveAlerts.find(a => 
-        (a.village || '').toLowerCase() === c.village.toLowerCase() ||
-        (a.region || '').toLowerCase() === c.village.toLowerCase()
+    return DEFAULT_CENTERS.map((c) => {
+      const match = liveAlerts.find(
+        (a) =>
+          (a.village || '').toLowerCase() === c.village.toLowerCase() ||
+          (a.region || '').toLowerCase() === c.village.toLowerCase()
       );
       if (match) {
         return {
@@ -254,17 +264,20 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
         };
       }
       return c;
-    });
+    }).map((c) => ({ ...c, pos: project(c.lng, c.lat) }));
   }, [liveAlerts]);
 
   const filteredCenters = useMemo(() => {
-    if (filterMode === 'critical') return centers.filter(c => c.alertLevel === 'Critical');
-    if (filterMode === 'outbreak') return centers.filter(c => c.zScore >= 3.0);
+    if (filterMode === 'critical') return centers.filter((c) => c.alertLevel === 'Critical');
+    if (filterMode === 'outbreak') return centers.filter((c) => c.zScore >= 3.0);
     return centers;
   }, [centers, filterMode]);
 
-  const activeOutbreaksCount = centers.filter(c => c.zScore >= 3.0).length;
-  const criticalCount = centers.filter(c => c.alertLevel === 'Critical').length;
+  const activeOutbreaksCount = centers.filter((c) => c.zScore >= 3.0).length;
+  const criticalCount = centers.filter((c) => c.alertLevel === 'Critical').length;
+  const criticalVillage = centers.find((c) => c.alertLevel === 'Critical')?.village || '—';
+
+  const gratPath = useMemo(() => graticulePath(), []);
 
   return (
     <div style={{
@@ -311,7 +324,7 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
             fontWeight: 700,
             color: '#f87171'
           }}>
-            ⚠️ {criticalCount} Critical Cluster ({centers[0]?.village})
+            ⚠️ {criticalCount} Critical Cluster ({criticalVillage})
           </div>
           <div style={{
             background: 'rgba(245, 158, 11, 0.15)',
@@ -333,7 +346,7 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
             fontWeight: 700,
             color: '#34d399'
           }}>
-            📡 12 Centers Monitored
+            📡 {DEFAULT_CENTERS.length} Centers Monitored
           </div>
         </div>
       </div>
@@ -355,10 +368,10 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8', marginRight: '6px', fontWeight: 600 }}>Filter:</span>
           {[
-            { id: 'all', label: 'All Centers (12)' },
+            { id: 'all', label: `All Centers (${DEFAULT_CENTERS.length})` },
             { id: 'outbreak', label: 'Anomalies (z ≥ 3.0)' },
             { id: 'critical', label: 'Critical Only' }
-          ].map(f => (
+          ].map((f) => (
             <button
               key={f.id}
               onClick={() => setFilterMode(f.id)}
@@ -434,7 +447,8 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '480px'
+          minHeight: '480px',
+          overflow: 'hidden'
         }}>
           {/* Tactical Overlay Grid Lines */}
           <div style={{
@@ -457,10 +471,11 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
             fontSize: '11px',
             fontFamily: 'monospace',
             color: '#64748b',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            zIndex: 2
           }}>
             GEODATA: WGS84 [68.0°E - 97.5°E, 7.5°N - 37.5°N]<br />
-            PROJECTION: MERCATOR TACTICAL GRID
+            PROJECTION: MERCATOR · GEOMET-INDIA v2
           </div>
 
           <div style={{
@@ -470,22 +485,45 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
             fontSize: '11px',
             fontFamily: 'monospace',
             color: '#64748b',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            zIndex: 2
           }}>
             OUTBREAK DETECTOR: z-score &gt; 3.0 (p &lt; 0.001)
           </div>
 
           {/* SVG Map of India */}
           <svg
-            viewBox="0 0 540 680"
-            style={{ width: '100%', maxHeight: '460px', overflow: 'visible', filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.5))' }}
+            viewBox={viewBox}
+            style={{ width: '100%', maxHeight: '460px', overflow: 'hidden', filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.5))' }}
           >
             <defs>
+              {/* Ocean */}
+              <radialGradient id="oceanGrad" cx="45%" cy="45%" r="75%">
+                <stop offset="0%" stopColor="#0b2145" />
+                <stop offset="60%" stopColor="#081a36" />
+                <stop offset="100%" stopColor="#050f22" />
+              </radialGradient>
+
+              {/* Land */}
+              <linearGradient id="landGrad" x1="0%" y1="0%" x2="60%" y2="100%">
+                <stop offset="0%" stopColor="#2a3b5f" />
+                <stop offset="55%" stopColor="#1f2e4d" />
+                <stop offset="100%" stopColor="#182645" />
+              </linearGradient>
+
               {/* Thermal Heatmap Glow Blur */}
               <filter id="heatBlur" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur in="SourceGraphic" stdDeviation="18" />
               </filter>
-              
+
+              <filter id="coastGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+
               <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
                 <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
               </filter>
@@ -508,128 +546,141 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
                 <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.5" />
                 <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
               </radialGradient>
+
+              {/* Clip: inside India only (keeps state borders off the ocean) */}
+              <clipPath id="indiaClip">
+                <path d={countryPath} />
+              </clipPath>
             </defs>
 
-            {/* Stylized India Landmass Outline */}
+            {/* Ocean */}
+            <rect x="0" y="0" width="540" height="680" fill="url(#oceanGrad)" />
+
+            {/* Lat/Lng graticule */}
+            <path d={gratPath} stroke="rgba(96, 165, 250, 0.10)" strokeWidth="0.7" fill="none" />
+
+            {/* Neighbor countries — dim context land */}
+            <g>
+              {neighborPaths.map((n) => (
+                <path key={n.iso} d={n.d} fill="#111b30" stroke="rgba(148, 163, 184, 0.22)" strokeWidth="1" />
+              ))}
+              <path d={sriLankaPath} fill="#141f38" stroke="rgba(148, 163, 184, 0.3)" strokeWidth="1" />
+            </g>
+
+            {/* India landmass */}
             <path
-              d="
-                M 174 64
-                L 231 108
-                L 210 150
-                L 255 195
-                L 320 272
-                L 390 263
-                L 434 286
-                L 459 268
-                L 524 224
-                L 491 301
-                L 451 330
-                L 394 350
-                L 353 388
-                L 272 465
-                L 252 562
-                L 215 618
-                L 190 582
-                L 154 485
-                L 138 407
-                L 101 359
-                L 68 321
-                L 93 253
-                L 190 166
-                L 158 118
-                Z
-              "
-              fill="rgba(30, 41, 59, 0.65)"
-              stroke="rgba(96, 165, 250, 0.4)"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-              strokeDasharray="none"
-              style={{ filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.2))' }}
+              d={countryPath}
+              fill="url(#landGrad)"
+              stroke="none"
+              style={{ filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.25))' }}
             />
 
-            {/* Internal State / Regional Boundaries Accent Lines */}
-            <g stroke="rgba(148, 163, 184, 0.18)" strokeWidth="1" strokeDasharray="3,3" fill="none">
-              <path d="M 190 166 L 255 195 L 267 242 L 320 272" />
-              <path d="M 101 359 L 144 378 L 230 438 L 272 465" />
-              <path d="M 144 378 L 154 417 L 217 525 L 252 562" />
-              <path d="M 239 218 L 272 256 L 342 270 L 392 338" />
-              <path d="M 390 263 L 459 268 L 491 301" />
+            {/* Real state boundaries, clipped to India */}
+            <g clipPath="url(#indiaClip)" stroke="rgba(148, 163, 184, 0.30)" strokeWidth="0.8" fill="none">
+              {statePaths.map((s) => (
+                <path key={s.name} d={s.d} />
+              ))}
+            </g>
+
+            {/* Coastline / international border — crisp glowing stroke */}
+            <path
+              d={countryPath}
+              fill="none"
+              stroke="rgba(125, 211, 252, 0.85)"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+              filter="url(#coastGlow)"
+            />
+
+            {/* Faint country watermark */}
+            <text
+              x={project(80.4, 23.6).x}
+              y={project(80.4, 23.6).y}
+              textAnchor="middle"
+              fill="rgba(226, 232, 240, 0.09)"
+              fontSize="30"
+              fontWeight="800"
+              letterSpacing="0.45em"
+              fontFamily="system-ui, sans-serif"
+            >
+              INDIA
+            </text>
+
+            {/* Cartographic labels */}
+            <g fontFamily="system-ui, -apple-system, sans-serif" fontWeight="700" textAnchor="middle" pointerEvents="none">
+              {SEA_LABELS.map((s) => {
+                const p = project(s.lng, s.lat);
+                return (
+                  <text key={s.text} x={p.x} y={p.y} fontSize={s.size} fill={`rgba(125, 211, 252, ${s.opacity})`} letterSpacing="0.25em" fontStyle="italic">
+                    {s.text}
+                  </text>
+                );
+              })}
+              {COUNTRY_LABELS.map((s) => {
+                const p = project(s.lng, s.lat);
+                return (
+                  <text key={s.text} x={p.x} y={p.y} fontSize={s.size} fill={`rgba(148, 163, 184, ${s.opacity})`} letterSpacing="0.18em">
+                    {s.text}
+                  </text>
+                );
+              })}
             </g>
 
             {/* THERMAL HEATMAP LAYER (Active when viewMode === 'heat') */}
             {viewMode === 'heat' && (
               <g filter="url(#heatBlur)">
-                {/* Major Epidemic Thermal Blobs */}
-                <circle cx="144" cy="378" r="75" fill="url(#dharampurHeat)" />
-                <circle cx="239" cy="218" r="55" fill="url(#rampurHeat)" />
-                <circle cx="267" cy="242" r="35" fill="url(#rampurHeat)" opacity="0.6" />
-                <circle cx="342" cy="270" r="30" fill="url(#generalHeat)" />
-                <circle cx="154" cy="417" r="30" fill="url(#generalHeat)" />
-                <circle cx="217" cy="525" r="25" fill="url(#generalHeat)" />
-                <circle cx="392" cy="338" r="25" fill="url(#generalHeat)" />
+                {centers.filter((c) => c.alertLevel === 'Critical').map((c) => (
+                  <circle key={`h-${c.id}`} cx={c.pos.x} cy={c.pos.y} r={46 + c.cases * 4} fill="url(#dharampurHeat)" />
+                ))}
+                {centers.filter((c) => c.alertLevel === 'High').map((c) => (
+                  <circle key={`h-${c.id}`} cx={c.pos.x} cy={c.pos.y} r={34 + c.cases * 4} fill="url(#rampurHeat)" />
+                ))}
+                {centers.filter((c) => ['Moderate', 'Normal'].includes(c.alertLevel)).map((c) => (
+                  <circle key={`h-${c.id}`} cx={c.pos.x} cy={c.pos.y} r={20 + c.cases * 3} fill="url(#generalHeat)" />
+                ))}
               </g>
             )}
 
             {/* RADAR SWEEP RINGS (For Outbreak Hotspots) */}
-            {filteredCenters.filter(c => c.activeCluster).map(cluster => (
+            {filteredCenters.filter((c) => c.activeCluster).map((cluster) => (
               <g key={`radar-${cluster.id}`}>
                 <circle
-                  cx={cluster.x}
-                  cy={cluster.y}
+                  cx={cluster.pos.x}
+                  cy={cluster.pos.y}
                   r={cluster.radius}
                   fill="none"
                   stroke={cluster.alertLevel === 'Critical' ? '#ef4444' : '#f59e0b'}
                   strokeWidth="1.5"
                   opacity="0.8"
                 >
-                  <animate
-                    attributeName="r"
-                    values={`${cluster.radius}; ${cluster.radius + 28}`}
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
-                  <animate
-                    attributeName="opacity"
-                    values="0.9; 0"
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
+                  <animate attributeName="r" values={`${cluster.radius}; ${cluster.radius + 28}`} dur="2s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.9; 0" dur="2s" repeatCount="indefinite" />
                 </circle>
                 <circle
-                  cx={cluster.x}
-                  cy={cluster.y}
+                  cx={cluster.pos.x}
+                  cy={cluster.pos.y}
                   r={cluster.radius * 0.7}
                   fill="none"
                   stroke={cluster.alertLevel === 'Critical' ? '#ef4444' : '#f59e0b'}
                   strokeWidth="1.5"
                   opacity="0.6"
                 >
-                  <animate
-                    attributeName="r"
-                    values={`${cluster.radius * 0.7}; ${cluster.radius + 14}`}
-                    dur="2s"
-                    begin="0.7s"
-                    repeatCount="indefinite"
-                  />
-                  <animate
-                    attributeName="opacity"
-                    values="0.7; 0"
-                    dur="2s"
-                    begin="0.7s"
-                    repeatCount="indefinite"
-                  />
+                  <animate attributeName="r" values={`${cluster.radius * 0.7}; ${cluster.radius + 14}`} dur="2s" begin="0.7s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.7; 0" dur="2s" begin="0.7s" repeatCount="indefinite" />
                 </circle>
               </g>
             ))}
 
             {/* NODE MARKERS FOR CENTERS */}
-            {filteredCenters.map(center => {
+            {filteredCenters.map((center) => {
+              const { x, y } = center.pos;
               const isSelected = selectedCenter?.id === center.id;
               const isCritical = center.alertLevel === 'Critical';
               const isHigh = center.alertLevel === 'High';
               const isMod = center.alertLevel === 'Moderate';
 
               const nodeColor = isCritical ? '#ef4444' : isHigh ? '#f59e0b' : isMod ? '#38bdf8' : '#10b981';
+              const flip = x > 330; // label on the left for eastern nodes
 
               return (
                 <g
@@ -637,23 +688,17 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
                   onClick={() => setSelectedCenter(center)}
                   style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
                 >
+                  <title>{`${center.village}, ${center.state} — ${center.cases} cases (z=${center.zScore})`}</title>
+
                   {/* Selection Ring */}
                   {isSelected && (
-                    <circle
-                      cx={center.x}
-                      cy={center.y}
-                      r="16"
-                      fill="none"
-                      stroke="#ffffff"
-                      strokeWidth="2"
-                      strokeDasharray="4,2"
-                    />
+                    <circle cx={x} cy={y} r="16" fill="none" stroke="#ffffff" strokeWidth="2" strokeDasharray="4,2" />
                   )}
 
                   {/* Core Node Circle */}
                   <circle
-                    cx={center.x}
-                    cy={center.y}
+                    cx={x}
+                    cy={y}
                     r={isCritical ? 9 : isHigh ? 7 : 5}
                     fill={nodeColor}
                     stroke="#ffffff"
@@ -665,24 +710,29 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
 
                   {/* Node Label */}
                   <text
-                    x={center.x + 12}
-                    y={center.y + 4}
+                    x={flip ? x - 12 : x + 12}
+                    y={y + 4}
+                    textAnchor={flip ? 'end' : 'start'}
                     fill={isSelected ? '#ffffff' : isCritical ? '#fca5a5' : '#cbd5e1'}
                     fontSize={isCritical ? '13px' : '11px'}
                     fontWeight={isCritical || isSelected ? '700' : '500'}
                     fontFamily="system-ui, -apple-system, sans-serif"
-                    style={{
-                      pointerEvents: 'none',
-                      textShadow: '0 1px 4px rgba(0,0,0,0.9)'
-                    }}
+                    style={{ pointerEvents: 'none', textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
                   >
                     {center.village}
-                    {isCritical && ' ⚠️ (8)'}
-                    {isHigh && ' (5)'}
+                    {isCritical && ` ⚠️ (${center.cases})`}
+                    {isHigh && ` (${center.cases})`}
                   </text>
                 </g>
               );
             })}
+
+            {/* Compass */}
+            <g transform="translate(508, 36)" pointerEvents="none">
+              <circle r="14" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(148, 163, 184, 0.35)" />
+              <path d="M0 -9 L4 5 L0 2 L-4 5 Z" fill="#7dd3fc" />
+              <text y="-16" textAnchor="middle" fontSize="8" fontWeight="800" fill="#94a3b8" fontFamily="system-ui">N</text>
+            </g>
           </svg>
 
           {/* Interactive Legend in Map */}
@@ -698,7 +748,8 @@ export default function IndiaOutbreakHeatmap({ liveAlerts = [] }) {
             fontSize: '11px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '4px'
+            gap: '4px',
+            zIndex: 2
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />

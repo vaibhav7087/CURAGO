@@ -1,0 +1,168 @@
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+
+const TMP = path.join(os.tmpdir(), 'opencode');
+const OUT = path.join(process.cwd(), 'src', 'components', 'indiaGeo.js');
+const W = 540;
+const H = 680;
+const PAD = 26;
+
+// ---------- projection ----------
+function merc(lng, lat) {
+  const x = (lng * Math.PI) / 180;
+  const clamped = Math.max(-84, Math.min(84, lat));
+  const y = Math.log(Math.tan(Math.PI / 4 + (clamped * Math.PI) / 360));
+  return [x, y];
+}
+
+// ---------- Douglas-Peucker ----------
+function perpendicularDistance(p, a, b) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  if (dx === 0 && dy === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
+  const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy);
+  const cl = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0] - (a[0] + cl * dx), p[1] - (a[1] + cl * dy));
+}
+
+function simplify(points, eps) {
+  if (points.length <= 4) return points;
+  const keep = new Array(points.length).fill(false);
+  keep[0] = keep[points.length - 1] = true;
+  const stack = [[0, points.length - 1]];
+  while (stack.length) {
+    const [lo, hi] = stack.pop();
+    let maxD = 0;
+    let idx = -1;
+    for (let i = lo + 1; i < hi; i++) {
+      const d = perpendicularDistance(points[i], points[lo], points[hi]);
+      if (d > maxD) {
+        maxD = d;
+        idx = i;
+      }
+    }
+    if (maxD > eps && idx > 0) {
+      keep[idx] = true;
+      stack.push([lo, idx], [idx, hi]);
+    }
+  }
+  return points.filter((_, i) => keep[i]);
+}
+
+// ---------- geojson helpers ----------
+function ringsOf(feature) {
+  const g = feature.geometry;
+  if (!g) return [];
+  if (g.type === 'Polygon') return g.coordinates;
+  if (g.type === 'MultiPolygon') return g.coordinates.flat();
+  return [];
+}
+
+function ringBBoxDiag(ring, proj) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const c of ring) {
+    const [x, y] = proj(c[0], c[1]);
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return Math.hypot(x1 - x0, y1 - y0);
+}
+
+// ---------- load ----------
+const states = JSON.parse(fs.readFileSync(path.join(TMP, 'india_state.geojson'), 'utf8'));
+const world = JSON.parse(fs.readFileSync(path.join(TMP, 'ne_50m_countries.geojson'), 'utf8'));
+
+const IND_ISO = new Set(['IND']);
+const LKA_ISO = new Set(['LKA']);
+const NEIGHBOR_ISO = new Set(['PAK', 'CHN', 'NPL', 'BGD', 'MMR', 'AFG']);
+
+const indFeatures = world.features.filter((f) => IND_ISO.has(f.properties.ISO_A3));
+const lkaFeatures = world.features.filter((f) => LKA_ISO.has(f.properties.ISO_A3));
+const neighborFeatures = world.features.filter((f) => NEIGHBOR_ISO.has(f.properties.ISO_A3));
+
+// projection fit — computed from India's coastline only
+function* allCoords(features) {
+  for (const f of features) for (const ring of ringsOf(f)) for (const c of ring) yield c;
+}
+
+let mxMin = Infinity, mxMax = -Infinity, myMin = Infinity, myMax = -Infinity;
+for (const c of allCoords(indFeatures)) {
+  const [mx, my] = merc(c[0], c[1]);
+  if (mx < mxMin) mxMin = mx;
+  if (mx > mxMax) mxMax = mx;
+  if (my < myMin) myMin = my;
+  if (my > myMax) myMax = my;
+}
+const k = Math.min((W - 2 * PAD) / (mxMax - mxMin), (H - 2 * PAD) / (myMax - myMin));
+const offX = PAD + (W - 2 * PAD - (mxMax - mxMin) * k) / 2;
+const offY = PAD + (H - 2 * PAD - (myMax - myMin) * k) / 2;
+
+function projectRaw(lng, lat) {
+  const [mx, my] = merc(lng, lat);
+  return [offX + (mx - mxMin) * k, offY + (myMax - my) * k];
+}
+
+function pathOf(features, eps) {
+  const parts = [];
+  for (const f of features) {
+    for (const ring of ringsOf(f)) {
+      let pts = ring.map((c) => [c[0], c[1]]);
+      if (pts.length > 2 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) {
+        pts = pts.slice(0, -1);
+      }
+      if (pts.length < 3) continue;
+      pts = simplify(pts, eps);
+      if (pts.length < 3) continue;
+      const proj = pts.map((p) => projectRaw(p[0], p[1]));
+      if (ringBBoxDiag(pts, projectRaw) < 1.6) continue; // drop specks
+      const d =
+        'M' +
+        proj
+          .map(([x, y], i) => `${i === 0 ? '' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`)
+          .join('') +
+        'Z';
+      parts.push(d);
+    }
+  }
+  return parts;
+}
+
+const countryPath = pathOf(indFeatures, 0.01).join('');
+const lankaPath = pathOf(lkaFeatures, 0.02).join('');
+const neighborPaths = neighborFeatures.map((f) => ({
+  iso: f.properties.ISO_A3,
+  d: pathOf([f], 0.04).join('')
+})).filter((n) => n.d);
+
+const statePaths = states.features.map((f) => ({
+  name: f.properties.NAME_1 || '',
+  d: pathOf([f], 0.012).join('')
+})).filter((s) => s.d);
+
+const totalLen = [countryPath, lankaPath, ...neighborPaths.map((n) => n.d), ...statePaths.map((s) => s.d)]
+  .reduce((a, s) => a + s.length, 0);
+
+const lines = [];
+lines.push('// AUTO-GENERATED by scripts/gen-india-map.mjs — do not edit by hand');
+lines.push(`export const viewBox = '0 0 ${W} ${H}';`);
+lines.push(`const K = ${k};`);
+lines.push(`const MX0 = ${mxMin};`);
+lines.push(`const MY0 = ${myMin};`);
+lines.push(`const OX = ${offX};`);
+lines.push(`const OY = ${offY + (myMax - myMin) * k};`);
+lines.push('export function project(lng, lat) {');
+lines.push('  const mx = (lng * Math.PI) / 180;');
+lines.push('  const c = Math.max(-84, Math.min(84, lat));');
+lines.push('  const my = Math.log(Math.tan(Math.PI / 4 + (c * Math.PI) / 360));');
+lines.push('  return { x: OX + (mx - MX0) * K, y: OY - (my - MY0) * K };');
+lines.push('}');
+lines.push(`export const countryPath = ${JSON.stringify(countryPath)};`);
+lines.push(`export const sriLankaPath = ${JSON.stringify(lankaPath)};`);
+lines.push(`export const neighborPaths = ${JSON.stringify(neighborPaths)};`);
+lines.push(`export const statePaths = ${JSON.stringify(statePaths)};`);
+
+fs.writeFileSync(OUT, lines.join('\n'), 'utf8');
+console.log('wrote', OUT);
+console.log('countryPath', countryPath.length, '| states', statePaths.length, statePaths.reduce((a, s) => a + s.d.length, 0), '| neighbors', neighborPaths.length, '| total', totalLen, 'chars');
+console.log('marker check Dharampur', projectRaw(73.18, 20.54).map((v) => v.toFixed(1)), 'Kolkata', projectRaw(88.42, 22.58).map((v) => v.toFixed(1)), 'Srinagar-ish', projectRaw(74.8, 34.1).map((v) => v.toFixed(1)));
