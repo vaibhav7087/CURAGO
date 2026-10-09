@@ -59,26 +59,30 @@ export default function TraineeDashboard() {
         
         const data = await res.json();
 
-        const formattedVisits = data.map((t, index) => ({
-          id: t.ticketId,
-          idx: index + 1, // Changed from t.ticketId to array index
-          name: 'Patient ' + t.patientId.slice(0, 4), // Name isn't in API response
-          age: 40,
-          sex: 'Unknown',
-          address: 'N/A',
-          condition: t.symptomsSummary || 'Pending investigation',
-          lastBP: '—',
-          time: t.createdAt ? new Date(t.createdAt).toLocaleTimeString() : 'Unknown',
-          status: t.vitalsData ? 'Done' : 'Pending',
-          vitals: t.vitalsData || { sys: '', dia: '', hr: '', spo2: '', temp: '' },
-          rawTicket: t
-        }));
+        const formattedVisits = data.map((t, index) => {
+          const p = t.patients || {}
+          const recorded = t.vitals_data && Object.keys(t.vitals_data).length > 0
+          return {
+            id: t.id,
+            idx: index + 1,
+            name: p.name || `Patient ${(t.patient_id || '').slice(0, 4)}`,
+            age: p.age ?? '—',
+            sex: p.gender || '—',
+            address: p.village || 'N/A',
+            condition: t.symptoms_summary || 'Pending investigation',
+            lastBP: t.vitals_data?.sys ? `${t.vitals_data.sys}/${t.vitals_data.dia || '—'}` : '—',
+            time: t.created_at ? new Date(t.created_at).toLocaleTimeString() : 'Unknown',
+            status: recorded ? 'Done' : 'Pending',
+            vitals: { sys: '', dia: '', hr: '', spo2: '', temp: '', ...(t.vitals_data || {}) },
+            rawTicket: t
+          }
+        });
 
         setVisits(formattedVisits);
         
         const initialVitals = {};
         formattedVisits.forEach(v => {
-          initialVitals[v.id] = v.rawTicket.vitalsData || { sys: '', dia: '', hr: '', spo2: '', temp: '' };
+          initialVitals[v.id] = { sys: '', dia: '', hr: '', spo2: '', temp: '', ...(v.rawTicket.vitals_data || {}) };
         });
         setVitals(initialVitals);
 
