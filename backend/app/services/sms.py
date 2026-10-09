@@ -5,7 +5,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def send_sms(to: str, body: str):
-    """Sends an SMS using Twilio."""
+    """Sends an SMS using Twilio. NOTIFY_SMS=1 required, else log-only (demo mode)."""
+    if os.getenv("NOTIFY_SMS", "0") != "1":
+        print(f"[demo] SMS suppressed to {to}: {body[:80]}")
+        return False
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
     from_number = os.getenv("TWILIO_PHONE_NUMBER")

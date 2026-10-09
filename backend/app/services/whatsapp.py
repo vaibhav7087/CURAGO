@@ -9,7 +9,10 @@ META_SYSTEM_TOKEN = "EAAhFOnY7zuIBSGJTfZAzQYNlv1gQCZA9sIMs3474JVZCs3T3D9yKmjMrZB
 META_PHONE_ID = os.getenv("META_PHONE_ID", "1255690297625490")
 
 def send_whatsapp_message(to_phone: str, message_body: str):
-    """Sends a free-form WhatsApp message using Meta Graph API."""
+    """Sends a free-form WhatsApp message using Meta Graph API. NOTIFY_WHATSAPP=1 required, else log-only."""
+    if os.getenv("NOTIFY_WHATSAPP", "0") != "1":
+        print(f"[demo] WhatsApp suppressed to {to_phone}: {message_body[:80]}")
+        return False
     url = f"https://graph.facebook.com/v19.0/{META_PHONE_ID}/messages"
     
     headers = {

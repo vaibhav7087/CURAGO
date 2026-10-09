@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 import traceback
+import os
 from app.core.database import supabase
 from app.services.llm import search_medical_knowledge, extract_patient_data
 
@@ -177,7 +178,7 @@ async def end_call_webhook(request: Request):
         severity = extracted.get("severity") or severity or "Medium"
         symptoms = extracted.get("symptoms") or symptoms or "Unspecified symptoms"
         if isinstance(symptoms, list):
-            symptoms = ", ".join(symptoms)g
+            symptoms = ", ".join(symptoms)
             
         age = extracted.get("age") or age
         gender = extracted.get("gender") or gender
@@ -235,7 +236,42 @@ async def end_call_webhook(request: Request):
         
         ticket_id = ticket_res.data[0]['id']
         print(f"Ticket created for {patient_name} with {severity} severity.")
-        
+
+        # === DS: Severity prediction (decision support, never overrides) ===
+        try:
+            import sys as _sys
+            _sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            from ds.predict import predict_severity as ds_predict
+
+            vitals_for_model = {}
+            if isinstance(age, (int, float)):
+                vitals_for_model['age'] = int(age)
+            if gender:
+                vitals_for_model['gender'] = gender
+            if symptoms:
+                vitals_for_model['symptoms'] = symptoms
+
+            ds_result = ds_predict(vitals_for_model)
+
+            # Merge with existing extracted_symptoms (preserve vitals advanced_diagnosis)
+            try:
+                existing_sym = supabase.table("tickets").select("extracted_symptoms").eq("id", ticket_id).execute()
+                prev = (existing_sym.data[0].get("extracted_symptoms") or {}) if existing_sym.data else {}
+                if not isinstance(prev, dict):
+                    prev = {}
+            except Exception:
+                prev = {}
+            prev.update({
+                "llm_severity": severity,
+                "ds_prediction": ds_result
+            })
+            supabase.table("tickets").update({
+                "extracted_symptoms": prev
+            }).eq("id", ticket_id).execute()
+            print(f"DS prediction stored: {ds_result.get('predicted_severity')} (confidence: {ds_result.get('confidence')})")
+        except Exception as ds_err:
+            print(f"DS prediction failed (non-fatal): {ds_err}")
+
         return {"status": "ok", "ticket_id": ticket_id}
 
     except Exception as e:

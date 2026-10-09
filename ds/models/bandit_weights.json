@@ -1,0 +1,194 @@
+{
+  "model": "v1-linucb-per-cluster",
+  "trained_at": "2026-10-08T20:59:55.346777+00:00",
+  "n_rows": 0,
+  "arms": [
+    "Paracetamol 500mg",
+    "Amoxicillin 250mg",
+    "Ibuprofen 400mg",
+    "Ceftriaxone Inj 1g",
+    "ORS Packets"
+  ],
+  "clusters": {
+    "fever": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    },
+    "pain": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    },
+    "respiratory": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    },
+    "gi": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    },
+    "skin": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    },
+    "urinary": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    },
+    "other": {
+      "weights": {
+        "Paracetamol 500mg": 0.2,
+        "Amoxicillin 250mg": 0.2,
+        "Ibuprofen 400mg": 0.2,
+        "Ceftriaxone Inj 1g": 0.2,
+        "ORS Packets": 0.2
+      },
+      "counts": {
+        "Paracetamol 500mg": 0,
+        "Amoxicillin 250mg": 0,
+        "Ibuprofen 400mg": 0,
+        "Ceftriaxone Inj 1g": 0,
+        "ORS Packets": 0
+      },
+      "mean_reward": {
+        "Paracetamol 500mg": 0.0,
+        "Amoxicillin 250mg": 0.0,
+        "Ibuprofen 400mg": 0.0,
+        "Ceftriaxone Inj 1g": 0.0,
+        "ORS Packets": 0.0
+      },
+      "n_rows": 0
+    }
+  },
+  "epsilon_greedy": {
+    "epsilon": 0.15,
+    "epsilon_decay": 0.999,
+    "min_epsilon": 0.05,
+    "alpha": 1.0
+  },
+  "reward_rubric": {
+    "accept": 1.0,
+    "edited": 0.5,
+    "rejected": 0.0
+  },
+  "notes": "Priors-only uniform weights when n_rows==0. Serving: epsilon-greedy over these weights; abstain floor (confidence<0.60) from v0 is preserved and never overridden."
+}

@@ -100,3 +100,95 @@ async def get_outbreaks():
         "critical_count": critical_count,
         "resolved_count": resolved_count
     }
+
+
+@router.get("/enhanced")
+async def get_enhanced_analytics():
+    """Enhanced analytics with DS-powered outbreak detection and fulfillment metrics."""
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    from ds.predict import detect_outbreaks_statistical
+
+    # --- 1. All tickets with patient data ---
+    res = supabase.table("tickets").select("id, status, severity, symptoms_summary, created_at, updated_at, patients(*)").limit(1000).execute()
+    tickets = res.data or []
+
+    # --- 2. Outbreak detection ---
+    tickets_by_village = {}
+    for t in tickets:
+        p = t.get("patients") or {}
+        village = p.get("village", "Unknown")
+        if village == "Unknown":
+            continue
+        if village not in tickets_by_village:
+            tickets_by_village[village] = []
+        tickets_by_village[village].append(t.get("created_at", ""))
+
+    outbreak_alerts = detect_outbreaks_statistical(tickets_by_village)
+
+    # --- 3. Order fulfillment time ---
+    orders_res = supabase.table("orders").select("id, status, created_at").limit(1000).execute()
+    orders = orders_res.data or []
+
+    pending_count = 0
+    delivered_count = 0
+    in_transit_count = 0
+    for o in orders:
+        status = o.get("status", "Pending")
+        if status == "Delivered":
+            delivered_count += 1
+        elif status == "In Transit":
+            in_transit_count += 1
+        else:
+            pending_count += 1
+
+    # --- 4. Daily ticket volume (last 30 days) ---
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    daily_volume = {}
+    for t in tickets:
+        created = t.get("created_at", "")
+        if created:
+            try:
+                dt = datetime.fromisoformat(created.replace("Z", ""))
+                day_key = dt.strftime("%Y-%m-%d")
+                daily_volume[day_key] = daily_volume.get(day_key, 0) + 1
+            except Exception:
+                pass
+
+    # Fill missing days
+    daily_trend = []
+    for i in range(30):
+        day = (now - timedelta(days=29 - i)).strftime("%Y-%m-%d")
+        daily_trend.append({"date": day, "count": daily_volume.get(day, 0)})
+
+    # --- 5. Ticket resolution time ---
+    # NOTE (read-path only): UI writes 'approved', backend writes 'resolved';
+    # both plus 'closed' count as resolved for metrics. No write paths touched.
+    RESOLVED_EQUIV = {"resolved", "approved", "closed"}
+    resolution_times = []
+    for t in tickets:
+        if t.get("status") in RESOLVED_EQUIV and t.get("created_at") and t.get("updated_at"):
+            try:
+                created = datetime.fromisoformat(t["created_at"].replace("Z", ""))
+                updated = datetime.fromisoformat(t["updated_at"].replace("Z", ""))
+                hours = (updated - created).total_seconds() / 3600
+                if hours > 0:
+                    resolution_times.append(hours)
+            except Exception:
+                pass
+
+    median_resolution_hrs = round(sorted(resolution_times)[len(resolution_times) // 2], 1) if resolution_times else None
+
+    return {
+        "outbreak_alerts": outbreak_alerts,
+        "daily_trend": daily_trend,
+        "order_stats": {
+            "pending": pending_count,
+            "in_transit": in_transit_count,
+            "delivered": delivered_count,
+            "total": len(orders)
+        },
+        "median_resolution_hours": median_resolution_hrs,
+        "total_tickets": len(tickets),
+    }

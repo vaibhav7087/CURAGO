@@ -8,3 +8,7 @@ httpx
 google-genai
 openai
 twilio
+scikit-learn>=1.3
+xgboost>=2.0
+joblib>=1.3
+numpy>=1.24

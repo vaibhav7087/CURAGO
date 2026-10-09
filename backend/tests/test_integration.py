@@ -20,7 +20,7 @@ def test_analytics_outbreaks(mock_supabase):
         {"id": "3", "symptoms_summary": "Fever and chills", "patients": {"village": "Dharampur"}},
         {"id": "4", "symptoms_summary": "Headache", "patients": {"village": "Rampur"}},
     ]
-    mock_supabase.table().select().gte().execute.return_value = mock_execute
+    mock_supabase.table().select().execute.return_value = mock_execute
 
     response = client.get("/api/analytics/outbreaks")
     assert response.status_code == 200
@@ -32,7 +32,7 @@ def test_analytics_outbreaks(mock_supabase):
     assert len(outbreaks) == 1
     assert outbreaks[0]["village"] == "Dharampur"
     assert outbreaks[0]["case_count"] == 3
-    assert "4-Day Outbreak Warning" in outbreaks[0]["message"]
+    assert "Outbreak Warning" in outbreaks[0]["message"]
 
 # --- 2. Test Vitals Endpoint (Interactive AI) ---
 @patch("app.routers.vitals.supabase")

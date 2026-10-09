@@ -2,7 +2,7 @@ import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
-from app.routers import doctor, trainee, webhook, orders, vitals, analytics, sms_webhook
+from app.routers import doctor, trainee, webhook, orders, vitals, analytics, sms_webhook, predict, recommend
 from fastapi.middleware.cors import CORSMiddleware
 import sys
 import os
@@ -36,6 +36,8 @@ app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(trainee.router, prefix="/api/trainee", tags=["Trainee"])
 app.include_router(vitals.router, prefix="/api/tickets/vitals", tags=["Vitals"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
+app.include_router(predict.router, prefix="/api", tags=["DS Predictions"])
+app.include_router(recommend.router, prefix="/api", tags=["DS Predictions"])
 
 @app.get("/")
 def root():
