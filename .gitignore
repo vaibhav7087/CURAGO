@@ -98,3 +98,14 @@ __pycache__/
 .wrangler
 .dev.vars*
 !.dev.vars.example
+.venv/
+.cache/
+*.pem
+*.key
+id_rsa
+id_ed25519
+.opencode/
+.huggingface/
+*.csd
+*.zip
+*.apk

@@ -1,0 +1,32 @@
+[
+  {
+    "patient": "Rajesh Kumar",
+    "age": 45,
+    "prediction": {
+      "predicted_severity": "High",
+      "confidence": 0.87,
+      "abstain": false,
+      "model_used": "xgboost_cdc_nhamcs"
+    }
+  },
+  {
+    "patient": "Anita Sharma",
+    "age": 32,
+    "prediction": {
+      "predicted_severity": "Low",
+      "confidence": 0.73,
+      "abstain": false,
+      "model_used": "xgboost_cdc_nhamcs"
+    }
+  },
+  {
+    "patient": "Pooja Verma",
+    "age": 12,
+    "prediction": {
+      "predicted_severity": "High",
+      "confidence": 0.91,
+      "abstain": false,
+      "model_used": "xgboost_cdc_nhamcs"
+    }
+  }
+]

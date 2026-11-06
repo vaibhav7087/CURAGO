@@ -1,0 +1,86 @@
+{
+  "outbreak_alerts": [
+    {
+      "village": "Dharampur",
+      "current_week_cases": 8,
+      "historical_weekly_avg": 2.3,
+      "z_score": 4.96,
+      "alert_level": "Critical",
+      "message": "Anomaly: 8 cases in Dharampur this week vs avg 2.3/week (z=5.0)"
+    },
+    {
+      "village": "Rampur",
+      "current_week_cases": 5,
+      "historical_weekly_avg": 1.8,
+      "z_score": 3.56,
+      "alert_level": "High",
+      "message": "Anomaly: 5 cases in Rampur this week vs avg 1.8/week (z=3.6)"
+    }
+  ],
+  "daily_trend": [
+    {
+      "date": "2026-09-06",
+      "count": 2
+    },
+    {
+      "date": "2026-09-07",
+      "count": 1
+    },
+    {
+      "date": "2026-09-08",
+      "count": 3
+    },
+    {
+      "date": "2026-09-09",
+      "count": 0
+    },
+    {
+      "date": "2026-09-10",
+      "count": 4
+    },
+    {
+      "date": "2026-09-11",
+      "count": 5
+    },
+    {
+      "date": "2026-09-12",
+      "count": 2
+    },
+    {
+      "date": "2026-09-13",
+      "count": 1
+    },
+    {
+      "date": "2026-09-14",
+      "count": 8
+    },
+    {
+      "date": "2026-09-15",
+      "count": 3
+    },
+    {
+      "date": "2026-09-16",
+      "count": 6
+    },
+    {
+      "date": "2026-09-17",
+      "count": 4
+    },
+    {
+      "date": "2026-09-18",
+      "count": 2
+    },
+    {
+      "date": "2026-09-19",
+      "count": 7
+    }
+  ],
+  "order_stats": {
+    "pending": 3,
+    "in_transit": 5,
+    "delivered": 18,
+    "total": 26
+  },
+  "median_resolution_hours": 4.2,
+  "total_tickets": 47
+}
