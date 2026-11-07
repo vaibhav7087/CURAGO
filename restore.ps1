@@ -2,8 +2,8 @@
 $tag = "data-backup-2026-11-07"
 $repo = "vaibhav7087/CURAGO"
 $entries = @(
-  @{ file = 'app-debug.apk'; rel = 'curago_field_app\build\app\outputs\apk\debug\app-debug.apk'; chunks = @('app-debug.apk'); sha256 = '12dfb50f40c95f9b61c8a234b91515c6ab04566f450cb69585af479a36692b2c' }
-  @{ file = 'app-debug.apk'; rel = 'curago_field_app\build\app\outputs\apk\debug\app-debug.apk'; chunks = @('app-debug.apk'); sha256 = '12dfb50f40c95f9b61c8a234b91515c6ab04566f450cb69585af479a36692b2c' }
+  @{ file = 'app-debug.apk'; rel = 'curago_field_app\build\app\outputs\apk\debug\app-debug.apk'; chunks = @('app-debug.apk'); sha256 = '12dfb50f40c95f9b61c8a234b91515c6ab04566f450cb69585af479a36692b2c' },
+  @{ file = 'app-debug.apk'; rel = 'curago_field_app\build\app\outputs\flutter-apk\app-debug.apk'; chunks = @('app-debug.apk'); sha256 = '12dfb50f40c95f9b61c8a234b91515c6ab04566f450cb69585af479a36692b2c' }
 )
 $dl = Join-Path $PSScriptRoot "restore_download"
 New-Item -ItemType Directory -Force -Path $dl | Out-Null
@@ -29,3 +29,4 @@ foreach ($e in $entries) {
   Write-Host "OK $($e.file)"
 }
 Write-Host "restore complete"
+
